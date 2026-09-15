@@ -1,0 +1,325 @@
+<title>Joy Of Gaming Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#07090f;--panel:#0e121b;--panel2:#141a26;--line:#1f2736;--line2:#2a3446;
+  --ink:#eef1f8;--ink2:#aab2c5;--muted:#6f7a93;
+  --accent:#4d8dff;--accent-dim:rgba(77,141,255,.45);--accent-soft:rgba(77,141,255,.13);--glow:rgba(77,141,255,.35);
+  --good:#3ddc97;--good-bg:rgba(61,220,151,.1);--bad:#ff5d6c;--bad-bg:rgba(255,93,108,.1);--warn:#f5b84b;--warn-bg:rgba(245,184,75,.1);
+  --display:"Chakra Petch","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font:14px/1.55 var(--body);padding-inline:16px;padding-block:0 56px;
+  background-image:radial-gradient(1200px 500px at 85% -120px,rgba(77,141,255,.12),transparent 70%),linear-gradient(var(--bg),var(--bg));background-repeat:no-repeat}
+a{color:inherit}
+.wrap{max-width:1200px;margin:0 auto}
+/* top bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;margin-inline:-16px;padding:10px 16px;background:rgba(7,9,15,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.mark{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;background:linear-gradient(135deg,#1b3a7a,#4d8dff);box-shadow:0 0 18px var(--glow)}
+.mark svg{width:16px;height:16px}
+.brand b{font:700 16px var(--display);letter-spacing:.04em;text-transform:uppercase}
+nav{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
+nav a{font:500 12px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);text-decoration:none;padding:6px 10px;border-radius:6px}
+nav a:hover,nav a:focus-visible{color:var(--ink);background:var(--panel2);outline:none}
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:end;padding-block:40px 28px}
+.eyebrow{font:500 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+h1{font:700 clamp(30px,4.2vw,48px)/1.02 var(--display);margin:10px 0 12px;letter-spacing:-.005em;text-transform:uppercase;text-wrap:balance}
+h1 em{font-style:normal;color:var(--accent);text-shadow:0 0 24px var(--glow)}
+.lede{color:var(--ink2);margin:0;max-width:56ch}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.chip{font:500 11.5px var(--mono);color:var(--ink2);border:1px solid var(--line2);border-radius:99px;padding:3px 10px;white-space:nowrap}
+.chip b{color:var(--ink);font-weight:500}
+.alerts{display:flex;flex-direction:column;gap:8px}
+.alert{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start;padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel)}
+.alert .ic{grid-row:span 2;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font:700 12px var(--mono)}
+.alert b{font:600 13.5px var(--body)}
+.alert span{color:var(--ink2);font-size:12.5px}
+.alert.bad .ic{background:var(--bad-bg);color:var(--bad)}
+.alert.good .ic{background:var(--good-bg);color:var(--good)}
+.alert.warn .ic{background:var(--warn-bg);color:var(--warn)}
+.alert.bad{border-left:2px solid var(--bad)}.alert.good{border-left:2px solid var(--good)}.alert.warn{border-left:2px solid var(--warn)}
+/* sections */
+section{padding-block:30px 6px;scroll-margin-top:70px}
+.sh{display:flex;justify-content:space-between;align-items:flex-end;gap:12px 24px;flex-wrap:wrap;margin-bottom:16px}
+h2{font:600 22px/1.1 var(--display);margin:6px 0 0;text-transform:uppercase;letter-spacing:.02em}
+.sub{color:var(--muted);font-size:13px;margin:0;max-width:62ch}
+.sub b{color:var(--ink2);font-weight:500}
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.kpi{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:12px;padding:16px 18px 12px;display:grid;grid-template-columns:1fr auto;gap:4px 12px}
+.kpi .lab{font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font:600 30px/1.1 var(--display);font-variant-numeric:tabular-nums;letter-spacing:.01em;grid-column:1}
+.kpi .spark{grid-column:2;grid-row:1/span 2;width:120px;align-self:center}
+.kpi .spark svg{display:block;width:100%;height:auto;overflow:visible}
+.kpi .ds{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;padding-top:10px;border-top:1px solid var(--line)}
+.pill{display:inline-flex;gap:6px;align-items:baseline;font:500 12px var(--mono);padding:3px 8px;border-radius:6px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill i{font-style:normal;color:var(--muted)}
+.pill.up{background:var(--good-bg);color:var(--good)}.pill.down{background:var(--bad-bg);color:var(--bad)}.pill.eq{background:var(--panel2);color:var(--ink2)}
+.kpi .foot{grid-column:1/-1;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+/* panels & charts */
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px 10px;min-width:0}
+.ph{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+.ph h3{font:600 13px var(--display);letter-spacing:.08em;text-transform:uppercase;margin:0;color:var(--ink)}
+.ph .last{font:500 12px var(--mono);color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ph .last b{color:var(--accent);font-weight:500}
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{fill:var(--muted);font:10.5px var(--mono);font-variant-numeric:tabular-nums}
+.tip{position:absolute;pointer-events:none;background:#eef1f8;color:#0a0d14;font:12px var(--mono);padding:6px 9px;border-radius:6px;white-space:nowrap;transform:translate(-50%,calc(-100% - 10px));box-shadow:0 6px 20px rgba(0,0,0,.5);z-index:2}
+.tip b{font-weight:600}
+/* tables */
+.tbl{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:10px 14px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font:500 10.5px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);background:var(--panel2)}
+td{font-variant-numeric:tabular-nums}
+.l{text-align:left}
+tbody tr:hover td{background:rgba(255,255,255,.02)}
+tr:last-child td{border-bottom:0}
+.rk{font:600 13px var(--display);color:var(--muted);width:34px;text-align:left}
+tr.first .rk{color:var(--accent)}
+.catn{font-weight:600}
+.meter{display:flex;align-items:center;gap:10px;justify-content:flex-end}
+.meter .trk{width:110px;height:6px;border-radius:3px;background:var(--panel2);overflow:hidden;flex:none}
+.meter .fil{height:100%;border-radius:0 3px 3px 0;background:var(--accent);box-shadow:0 0 10px var(--glow)}
+.meter .fil.dim{background:var(--accent-dim);box-shadow:none}
+.meter span{min-width:58px}
+tr.sep td{padding:6px 14px;background:var(--panel2);font:500 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left}
+tr.otros td{color:var(--ink2)}
+.tag{display:inline-block;font:500 10.5px var(--mono);letter-spacing:.04em;padding:2px 7px;border-radius:5px;border:1px solid var(--line2);color:var(--ink2);white-space:nowrap}
+.tag.warn{border-color:rgba(245,184,75,.45);color:var(--warn);background:var(--warn-bg)}
+.vt{white-space:normal;min-width:280px;max-width:470px;text-align:left}
+.vt small{display:block;font:11px var(--mono);color:var(--muted);margin-top:2px}
+td.ctr{font:600 13.5px var(--display);letter-spacing:.02em}
+.good-t{color:var(--good)}.bad-t{color:var(--bad)}
+/* tabs */
+.tabs{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}
+.tabs button{font:600 12px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);background:none;border:0;border-radius:6px;padding:7px 14px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);color:#fff;box-shadow:0 0 14px var(--glow)}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* notes */
+footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);display:grid;grid-template-columns:200px 1fr;gap:16px}
+footer h4{font:600 13px var(--display);letter-spacing:.08em;text-transform:uppercase;margin:0}
+footer ul{margin:0;padding-left:18px;color:var(--ink2);font-size:13px;display:flex;flex-direction:column;gap:6px;max-width:90ch}
+footer li::marker{color:var(--accent)}
+@media (max-width:980px){.hero{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:1fr}}
+@media (max-width:640px){.kpis,.g2{grid-template-columns:1fr}nav{display:none}footer{grid-template-columns:1fr}.kpi .spark{width:96px}}
+@media (prefers-reduced-motion:no-preference){.fil{transition:width .6s ease}}
+</style>
+
+<div class="bar"><div class="wrap">
+  <a class="brand" href="#top"><span class="mark"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5 13 8l-9 5.5z" fill="#fff"/></svg></span><b>Joy Of Gaming</b></a>
+  <nav aria-label="Secciones"><a href="#resumen">Resumen</a><a href="#semanal">Semanal</a><a href="#mensual">Mensual</a><a href="#categorias">Categorías</a><a href="#videos">Videos</a></nav>
+</div></div>
+
+<div class="wrap" id="top">
+<div class="hero">
+  <div>
+    <div class="eyebrow">Panel de performance · Gameplay PS5 Pro 4K HDR</div>
+    <h1>Agosto 2026 <em>en números</em></h1>
+    <p class="lede">Último mes completo contra julio 2026 y agosto 2025, tendencias semanales y mensuales, y qué contenido convierte mejor.</p>
+    <div class="chips" id="chips"></div>
+  </div>
+  <div class="alerts" id="alerts" aria-label="Alertas"></div>
+</div>
+
+<section id="resumen">
+  <div class="sh"><div><div class="eyebrow">01 · Mes completo</div><h2>Resumen de agosto</h2></div>
+  <p class="sub">Variación vs julio 2026 y vs agosto 2025. CTR en puntos porcentuales. Mini gráfico: últimos 13 meses (ago 25 → ago 26).</p></div>
+  <div class="kpis" id="kpis"></div>
+</section>
+
+<section id="semanal">
+  <div class="sh"><div><div class="eyebrow">02 · Últimas 52 semanas ISO</div><h2>Evolución semanal</h2></div><p class="sub" id="semsub"></p></div>
+  <div class="g2">
+    <div class="panel"><div class="ph"><h3>Vistas</h3><span class="last" id="wv-last"></span></div><div class="chart" id="c-wv"></div></div>
+    <div class="panel"><div class="ph"><h3>CTR</h3><span class="last" id="wc-last"></span></div><div class="chart" id="c-wc"></div></div>
+  </div>
+</section>
+
+<section id="mensual">
+  <div class="sh"><div><div class="eyebrow">03 · Desde enero 2024</div><h2>Evolución mensual</h2></div><p class="sub" id="messub"></p></div>
+  <div class="g3">
+    <div class="panel"><div class="ph"><h3>Vistas</h3><span class="last" id="mv-last"></span></div><div class="chart" id="c-mv"></div></div>
+    <div class="panel"><div class="ph"><h3>Subs netos</h3><span class="last" id="ms-last"></span></div><div class="chart" id="c-ms"></div></div>
+    <div class="panel"><div class="ph"><h3>RPM (USD)</h3><span class="last" id="mr-last"></span></div><div class="chart" id="c-mr"></div></div>
+  </div>
+</section>
+
+<section id="categorias">
+  <div class="sh"><div><div class="eyebrow">04 · Videos largos con ≥14 días</div><h2>Performance por categoría</h2></div>
+  <p class="sub">Ordenado por CTR ponderado (clicks ÷ impresiones). % reproducido ponderado por vistas. Menos de 8 videos = muestra insuficiente. OTROS va aparte: no es comparable.</p></div>
+  <div class="tbl"><table id="cat"></table></div>
+</section>
+
+<section id="videos">
+  <div class="sh"><div><div class="eyebrow">05 · Por video</div><h2>Mejores y peores por CTR</h2></div>
+  <div class="tabs" role="tablist" aria-label="Ranking">
+    <button id="tab-top" role="tab" aria-selected="true" aria-controls="p-top">Top 15</button>
+    <button id="tab-bot" role="tab" aria-selected="false" aria-controls="p-bot">Bottom 15</button>
+  </div></div>
+  <p class="sub" id="tbsub" style="margin-bottom:12px"></p>
+  <div id="p-top" role="tabpanel" aria-labelledby="tab-top"><div class="tbl"><table id="top-t"></table></div></div>
+  <div id="p-bot" role="tabpanel" aria-labelledby="tab-bot" hidden><div class="tbl"><table id="bot-t"></table></div></div>
+</section>
+
+<footer><h4>Notas sobre la data</h4><ul id="notas"></ul></footer>
+</div>
+
+<script>
+const D=__DATA__;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+const fmt=(x,d=0)=>Number(x).toLocaleString('es-CL',{minimumFractionDigits:d,maximumFractionDigits:d});
+const nf=x=>fmt(x,0);
+const compact=x=>Math.abs(x)>=1e6?fmt(x/1e6,1)+'M':Math.abs(x)>=1e3?fmt(x/1e3,0)+'k':fmt(x);
+const MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const mesLbl=s=>{const[y,m]=s.split('-');return MES[m-1]+' '+y.slice(2)};
+const catLbl={EXTREME_SPORTS:'Extreme sports',RACING_MOTOR:'Racing / motor',SHOOTER_MILITAR:'Shooter militar',HORROR_SURVIVAL:'Horror / survival',MUNDO_ABIERTO_RPG:'Mundo abierto / RPG',ACCION_AVENTURA:'Acción / aventura',OTROS:'Otros'};
+const pctChg=(c,b)=>(c/b-1)*100;
+
+const R=D.resumen,a=R.actual,M=D.mensual,S=D.semanal;
+
+$('chips').innerHTML=[`Corte <b>${D.corte}</b>`,`<b>${D.n_filtrado}</b> videos largos analizados`,`Semanas lun–dom`,`Hora del Pacífico`].map(x=>`<span class="chip">${x}</span>`).join('');
+
+// alerts (derived from data)
+const dSubs=pctChg(a.subs_netos,R.prev.subs_netos),dImp=pctChg(a.impresiones,R.prev.impresiones),dCtr=a.ctr-R.prev.ctr,dRpmY=pctChg(a.rpm,R.yoy.rpm);
+const AL=[
+ ['bad','!',`Subs netos: ${nf(a.subs_netos)} (${fmt(dSubs,0)} % vs julio)`,`${nf(a.subs_ganados)} ganados y ${nf(a.subs_perdidos)} perdidos. Agosto 2025 cerró con ${nf(R.yoy.subs_netos)}.`],
+ ['bad','↓',`Impresiones ${fmt(dImp,0)} % vs julio`,`La caída de vistas (${fmt(pctChg(a.vistas,R.prev.vistas),0)} %) viene de menos alcance, no del CTR.`],
+ ['good','↑',`CTR ${fmt(a.ctr,2)} % (${dCtr>=0?'+':''}${fmt(dCtr,2)} pp vs julio)`,`También sobre agosto 2025 (${fmt(R.yoy.ctr,2)} %).`],
+ ['warn','?',`RPM ${fmt(dRpmY,0)} % vs agosto 2025, con cautela`,`En ${D.rpm_dif_ago.length} días de agosto el RPM de YouTube no calza con ingresos ÷ vistas. Volvé a bajar la data en unos días.`],
+];
+$('alerts').innerHTML=AL.map(([c,i,t,s])=>`<div class="alert ${c}"><span class="ic">${i}</span><b>${t}</b><span>${s}</span></div>`).join('');
+
+// KPI tiles
+function pill(cur,base,kind,lab){
+  const d=kind==='pp'?cur-base:pctChg(cur,base);
+  const cls=Math.abs(d)<(kind==='pp'?0.005:0.05)?'eq':d>0?'up':'down';
+  const ar=cls==='up'?'▲':cls==='down'?'▼':'■';
+  return `<span class="pill ${cls}" title="${lab}"><i>${lab}</i>${ar} ${d>0?'+':d<0?'−':''}${fmt(Math.abs(d),kind==='pp'?2:1)}${kind==='pp'?' pp':' %'}</span>`;
+}
+function spark(vals){
+  const W=120,H=44,p=4,mn=Math.min(...vals),mx=Math.max(...vals);
+  const X=i=>p+i*(W-2*p)/(vals.length-1),Y=v=>H-p-(v-mn)/((mx-mn)||1)*(H-2*p);
+  const d=vals.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+','+Y(v).toFixed(1)).join('');
+  const L=vals.length-1;
+  return `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="${d}L${X(L)},${H}L${X(0)},${H}Z" fill="var(--accent-soft)"/><path d="${d}" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linejoin="round"/><circle cx="${X(0)}" cy="${Y(vals[0])}" r="2.5" fill="var(--muted)"/><circle cx="${X(L)}" cy="${Y(vals[L])}" r="3.5" fill="var(--accent)" stroke="var(--panel)" stroke-width="1.5"/></svg>`;
+}
+const last13=M.slice(-13);
+const K=[
+ ['Vistas','vistas','vistas',v=>nf(v),'%'],
+ ['Impresiones','impresiones','imp',v=>nf(v),'%'],
+ ['CTR','ctr','ctr',v=>fmt(v,2)+'%','pp'],
+ ['Subs netos','subs_netos','subs',v=>nf(v),'%'],
+ ['Ingresos','ingresos_usd','ing',v=>'US$'+fmt(v,0),'%'],
+ ['RPM','rpm','rpm',v=>'US$'+fmt(v,2),'%'],
+];
+$('kpis').innerHTML=K.map(([n,k,mk,f,kind])=>`<div class="kpi"><div class="lab">${n}</div><div class="spark" title="${last13[0].mes} a ${last13[12].mes}">${spark(last13.map(x=>x[mk]))}</div><div class="v">${f(a[k])}</div>
+<div class="ds">${pill(a[k],R.prev[k],kind,'vs jul 26')}${pill(a[k],R.yoy[k],kind,'vs ago 25')}</div>
+<div class="foot">jul 26: ${f(R.prev[k])} · ago 25: ${f(R.yoy[k])}${k==='rpm'?' · ver nota ⚠':''}</div></div>`).join('');
+
+// charts
+function niceTicks(min,max,n=4){const span=max-min||1;const mag=Math.pow(10,Math.floor(Math.log10(span/n)));const step=[1,2,2.5,5,10].map(s=>s*mag).find(s=>span/s<=n+.5);const lo=Math.floor(min/step)*step,hi=Math.ceil(max/step)*step;const t=[];for(let v=lo;v<=hi+step/2;v+=step)t.push(+v.toFixed(10));return t}
+function chart(el,data,{W=560,H=240,type='line',yfmt=compact,tipfmt,xlbl,xevery=1,zero=true,ref=null}){
+  const m={l:44,r:10,t:14,b:28},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  const ys=data.map(d=>d.y);let mn=zero?0:Math.min(...ys),mx=Math.max(...ys);
+  if(!zero){const p=(mx-mn)*.12;mn-=p;mx+=p}
+  const tk=niceTicks(mn,mx),y0=tk[0],y1=tk[tk.length-1],Y=v=>m.t+ih-(v-y0)/(y1-y0)*ih;
+  const n=data.length,bw=iw/n,X=i=>m.l+bw*(i+.5);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img">`;
+  tk.forEach(t=>{s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${m.l-8}" y="${Y(t)+3.5}" text-anchor="end">${yfmt(t)}</text>`});
+  data.forEach((d,i)=>{if((n-1-i)%xevery===0)s+=`<text x="${X(i)}" y="${H-8}" text-anchor="middle">${xlbl(d)}</text>`});
+  if(ref!==null){s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(ref)}" y2="${Y(ref)}" stroke="var(--ink2)" stroke-width="1" stroke-dasharray="4 4" opacity=".6"/>`}
+  if(type==='bar'){
+    const w=Math.max(2,bw-2),yb=Y(Math.max(0,y0));
+    data.forEach((d,i)=>{const yt=Y(d.y),h=Math.max(0,yb-yt),r=Math.min(3,w/2,h),x=X(i)-w/2,last=i===n-1;
+      s+=`<path d="M${x},${yb}V${yt+r}Q${x},${yt} ${x+r},${yt}H${x+w-r}Q${x+w},${yt} ${x+w},${yt+r}V${yb}Z" fill="${last?'var(--accent)':'var(--accent-dim)'}"${last?' filter="url(#gl)"':''}/>`});
+    s+=`<defs><filter id="gl" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+  }else{
+    const pts=data.map((d,i)=>[X(i),Y(d.y)]),path=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(''),L=pts[n-1];
+    const gid='g'+el.id;
+    s+=`<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4d8dff" stop-opacity=".28"/><stop offset="1" stop-color="#4d8dff" stop-opacity="0"/></linearGradient></defs>`;
+    s+=`<path d="${path}L${L[0]},${m.t+ih}L${pts[0][0]},${m.t+ih}Z" fill="url(#${gid})"/><path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px rgba(77,141,255,.5))"/>`;
+    s+=`<circle cx="${L[0]}" cy="${L[1]}" r="4.5" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/>`;
+  }
+  s+=`<line class="xh" y1="${m.t}" y2="${m.t+ih}" stroke="var(--ink2)" stroke-width="1" stroke-dasharray="3 3" visibility="hidden"/><circle class="dot" r="4" fill="#eef1f8" visibility="hidden"/>`;
+  s+=`<rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent"/></svg><div class="tip" hidden></div>`;
+  el.innerHTML=s;
+  const svg=el.querySelector('svg'),tip=el.querySelector('.tip'),xh=el.querySelector('.xh'),dot=el.querySelector('.dot');
+  const hide=()=>{tip.hidden=true;xh.setAttribute('visibility','hidden');dot.setAttribute('visibility','hidden')};
+  svg.addEventListener('pointermove',e=>{const r=svg.getBoundingClientRect(),sx=(e.clientX-r.left)/r.width*W,i=Math.floor((sx-m.l)/bw);
+    if(i<0||i>=n)return hide();
+    xh.setAttribute('x1',X(i));xh.setAttribute('x2',X(i));xh.setAttribute('visibility','visible');
+    if(type!=='bar'){dot.setAttribute('cx',X(i));dot.setAttribute('cy',Y(data[i].y));dot.setAttribute('visibility','visible')}
+    tip.hidden=false;tip.innerHTML=tipfmt(data[i]);
+    const px=Math.min(Math.max(X(i)/W*r.width,70),r.width-70);tip.style.left=px+'px';tip.style.top=(Y(data[i].y)/H*r.height)+'px'});
+  svg.addEventListener('pointerleave',hide);
+}
+
+// weekly
+const S0=S[0],SL=S[S.length-1];
+$('semsub').innerHTML=`<b>${S0.sem}</b> (${S0.inicio}) a <b>${SL.sem}</b> (${SL.inicio}). `+(D.sem_excluidas_en_rango.length?`Excluidas por parciales: ${D.sem_excluidas_en_rango.join(', ')}.`:`Sin semanas parciales en este rango. La única parcial de la base es <b>${D.semanas_parciales.join(', ')}</b>, fuera del período.`);
+const wl=d=>{const[,mm,dd]=d.inicio.split('-');return +dd+' '+MES[mm-1]};
+$('wv-last').innerHTML=`${SL.sem}: <b>${nf(SL.vistas)}</b>`;
+$('wc-last').innerHTML=`${SL.sem}: <b>${fmt(SL.ctr,2)} %</b>`;
+chart($('c-wv'),S.map(d=>({...d,y:d.vistas})),{type:'bar',xlbl:wl,xevery:8,tipfmt:d=>`${d.sem} · desde ${d.inicio}<br><b>${nf(d.vistas)}</b> vistas`});
+chart($('c-wc'),S.map(d=>({...d,y:d.ctr})),{zero:false,yfmt:v=>fmt(v,1)+'%',xlbl:wl,xevery:8,tipfmt:d=>`${d.sem} · desde ${d.inicio}<br>CTR <b>${fmt(d.ctr,2)} %</b>`});
+
+// monthly
+const ML=M[M.length-1];
+$('messub').innerHTML=`${mesLbl(M[0].mes)} a ${mesLbl(ML.mes)} (${M.length} meses). Excluido por incompleto: <b>${D.meses_parciales.join(', ')}</b>. Subs netos = ganados − perdidos. RPM = ingresos ÷ (vistas/1000).`;
+const ml=d=>mesLbl(d.mes);
+$('mv-last').innerHTML=`${mesLbl(ML.mes)}: <b>${compact(ML.vistas)}</b>`;
+$('ms-last').innerHTML=`${mesLbl(ML.mes)}: <b>${nf(ML.subs)}</b>`;
+$('mr-last').innerHTML=`${mesLbl(ML.mes)}: <b>US$ ${fmt(ML.rpm,2)}</b>`;
+chart($('c-mv'),M.map(d=>({...d,y:d.vistas})),{W:380,H:250,type:'bar',xlbl:ml,xevery:6,tipfmt:d=>`${mesLbl(d.mes)}<br><b>${nf(d.vistas)}</b> vistas`});
+chart($('c-ms'),M.map(d=>({...d,y:d.subs})),{W:380,H:250,type:'bar',xlbl:ml,xevery:6,yfmt:v=>compact(v),tipfmt:d=>`${mesLbl(d.mes)}<br><b>${nf(d.subs)}</b> subs netos`});
+chart($('c-mr'),M.map(d=>({...d,y:d.rpm})),{W:380,H:250,yfmt:v=>fmt(v,2),xlbl:ml,xevery:6,tipfmt:d=>`${mesLbl(d.mes)}<br>RPM <b>US$ ${fmt(d.rpm,3)}</b><br>Ingresos US$ ${fmt(d.ing,0)}`});
+
+// categories
+const C=D.categorias,comp=C.filter(c=>c.cat!=='OTROS'&&c.n>=8),small=C.filter(c=>c.cat!=='OTROS'&&c.n<8),otros=C.filter(c=>c.cat==='OTROS');
+const mxC=Math.max(...comp.map(c=>c.ctr)),mxP=Math.max(...C.map(c=>c.pct)),mxS=Math.max(...C.map(c=>c.subs1k));
+const meter=(v,mx,txt,dim)=>`<div class="meter"><span>${txt}</span><div class="trk"><div class="fil${dim?' dim':''}" style="width:${Math.min(100,v/mx*100).toFixed(1)}%"></div></div></div>`;
+const crow=(c,rk,tag,dim,first)=>`<tr class="${c.cat==='OTROS'?'otros':''}${first?' first':''}"><td class="rk">${rk}</td><td class="l"><span class="catn">${catLbl[c.cat]}</span> ${tag||''}</td>
+<td>${c.n}</td><td>${nf(Math.round(c.vpv))}</td><td>${meter(c.ctr,mxC,fmt(c.ctr,2)+' %',dim)}</td><td>${meter(c.pct,mxP,fmt(c.pct,1)+' %',true)}</td><td>${meter(c.subs1k,mxS,fmt(c.subs1k,2),true)}</td></tr>`;
+$('cat').innerHTML=`<thead><tr><th class="l">#</th><th class="l">Categoría</th><th>Videos</th><th>Vistas / video</th><th>CTR ponderado</th><th>% reproducido</th><th>Subs / 1000 vistas</th></tr></thead><tbody>`+
+ comp.map((c,i)=>crow(c,String(i+1).padStart(2,'0'),'',false,i===0)).join('')+
+ (small.length||otros.length?`<tr class="sep"><td colspan="7">Fuera del ranking</td></tr>`:'')+
+ small.map(c=>crow(c,'—','<span class="tag warn">muestra insuficiente</span>',true)).join('')+
+ otros.map(c=>crow(c,'—','<span class="tag warn">no comparable</span>',true)).join('')+'</tbody>';
+
+// top / bottom
+$('tbsub').textContent=`CTR = clicks ÷ impresiones por video (acumulado 2023–2026). Sin mínimo de impresiones: mirá esa columna antes de concluir (mínimo en top: ${nf(D.min_imp_top)}; en bottom: ${nf(D.min_imp_bot)}).`;
+const vh=`<thead><tr><th class="l">#</th><th class="l">Video</th><th class="l">Categoría</th><th>Publicado</th><th>Impresiones</th><th>Vistas</th><th>CTR</th><th>% repr.</th></tr></thead>`;
+const vrow=(v,i,cls)=>`<tr${v.categoria==='OTROS'?' class="otros"':''}><td class="rk">${String(i+1).padStart(2,'0')}</td><td class="vt">${esc(v.titulo)}<small>${esc(v.video_id)}</small></td>
+<td class="l"><span class="tag${v.categoria==='OTROS'?' warn':''}">${catLbl[v.categoria]}</span></td><td>${v.fecha_publicacion}</td><td>${nf(v.impresiones)}</td><td>${nf(v.vistas)}</td><td class="ctr ${cls}">${fmt(v.ctr,2)} %</td><td>${fmt(v.pct_reproducido,1)} %</td></tr>`;
+$('top-t').innerHTML=vh+'<tbody>'+D.top.map((v,i)=>vrow(v,i,'good-t')).join('')+'</tbody>';
+$('bot-t').innerHTML=vh+'<tbody>'+D.bottom.map((v,i)=>vrow(v,i,'bad-t')).join('')+'</tbody>';
+const tabs=[['tab-top','p-top'],['tab-bot','p-bot']];
+tabs.forEach(([t,p])=>$(t).addEventListener('click',()=>tabs.forEach(([t2,p2])=>{const on=t2===t;$(t2).setAttribute('aria-selected',on);$(p2).hidden=!on})));
+
+// notes
+$('notas').innerHTML=[
+ `Filtro: de ${D.n_total} videos se excluyeron ${D.n_cortos} shorts (es_largo = False) y ${D.n_nuevos} largos con menos de 14 días. Quedan ${D.n_filtrado}.`,
+ `CTR siempre = suma(clicks) ÷ suma(impresiones). % reproducido y AVD ponderados por vistas. RPM = ingresos ÷ (vistas/1000).`,
+ `RPM: en ${D.rpm_dif_dias} días la columna rpm_usd de YouTube difiere en más de US$ 0,05 de ingresos ÷ vistas (${D.rpm_dif_ago.length} de ellos en agosto 2026). Si YouTube aún ajusta ingresos recientes, el RPM de agosto podría corregirse.`,
+ `Clicks por video vienen con decimales (estimados desde CTR × impresiones). El CTR ponderado es correcto, pero los clicks no son conteos exactos.`,
+ `Métricas por video = acumulado 2023–2026, no lifetime. Videos anteriores a 2023 solo reflejan su tráfico desde 2023.`,
+ `Subs / 1000 vistas por categoría usa subs ganados: metricas_video.csv no trae subs perdidos por video (se obtiene agregando esa métrica al export "Contenido" de YouTube Studio).`,
+ `% reproducido a nivel canal no está en metricas_canal.csv (re-exportar pestaña "Fecha" con "Porcentaje promedio reproducido").`,
+ `Vacíos en metricas_canal.csv: rpm_usd el ${D.rpm_nulos.join(', ')}; ingresos_usd el ${D.ing_nulos.join(', ')}. No afecta: septiembre 2026 está excluido.`,
+ `Fechas en hora del Pacífico (EE.UU.), sin convertir.`
+].map(x=>`<li>${x}</li>`).join('');
+</script>
