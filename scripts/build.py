@@ -1,6 +1,13 @@
 import pandas as pd, json, os
 os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data'))
-ANIOS=('2025','2026')  # el panel cubre exclusivamente estos anios
+# Periodo del panel: se cuentan las vistas OCURRIDAS en estos anios, sin
+# importar cuando se publico el video.
+ANIOS=('2025','2026')
+# Ventana del export metricas_video.csv. Ese archivo trae totales acumulados
+# por video, sin columna de fecha, asi que no se puede recortar por codigo:
+# hay que re-exportarlo desde YouTube Studio con el rango deseado y actualizar
+# esta constante. Mientras no coincida con ANIOS, el panel lo avisa.
+VENTANA_VIDEOS=('2023','2026')
 m=pd.read_csv('metricas_canal.csv'); c=pd.read_csv('catalogo_videos.csv'); v=pd.read_csv('metricas_video.csv')
 m=m[m.mes.str[:4].isin(ANIOS)].copy()
 m['subs_netos']=m.subs_ganados-m.subs_perdidos
@@ -32,8 +39,7 @@ mm=mm[~mm.parcial]
 out['mensual']=[{'mes':i,'vistas':int(r.vistas),'subs':int(r.subs_netos),'rpm':float(r.rpm),'imp':int(r.impresiones),'ctr':float(r.ctr),'ing':float(r.ingresos_usd)} for i,r in mm.iterrows()]
 # videos
 d=c.merge(v,on='video_id',how='inner')
-d=d[d.fecha_publicacion.str[:4].isin(ANIOS)].copy()
-out['periodo_videos']=list(ANIOS)
+out['periodo_videos']=list(VENTANA_VIDEOS)
 out['n_total']=len(d); out['n_cortos']=int((~d.es_largo).sum())
 out['n_nuevos']=int((d.es_largo&(d.dias_publicado<14)).sum())
 f=d[d.es_largo&(d.dias_publicado>=14)].copy()
