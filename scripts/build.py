@@ -1,6 +1,8 @@
 import pandas as pd, json, os
 os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data'))
+ANIOS=('2025','2026')  # el panel cubre exclusivamente estos anios
 m=pd.read_csv('metricas_canal.csv'); c=pd.read_csv('catalogo_videos.csv'); v=pd.read_csv('metricas_video.csv')
+m=m[m.mes.str[:4].isin(ANIOS)].copy()
 m['subs_netos']=m.subs_ganados-m.subs_perdidos
 def agg(g):
     s=g[['vistas','impresiones','clicks','subs_ganados','subs_perdidos','subs_netos','ingresos_usd','tiempo_repr_horas']].sum(min_count=1)
@@ -11,7 +13,7 @@ def agg(g):
     s['parcial']=bool(g.mes_parcial.any())
     return s
 mon=m.groupby('mes').apply(agg)
-out={}
+out={'periodo':list(ANIOS)}
 def row(k):
     r=mon.loc[k]; return {x:float(r[x]) for x in ['vistas','impresiones','ctr','subs_netos','subs_ganados','subs_perdidos','ingresos_usd','rpm']}
 out['resumen']={'actual':row('2026-08'),'prev':row('2026-07'),'yoy':row('2025-08'),'dias':int(mon.loc['2026-08','dias'])}
@@ -24,12 +26,14 @@ out['semanal']=[{'sem':i,'inicio':r.inicio,'vistas':int(r.vistas),'ctr':r.clicks
 # check contiguity
 out['sem_excluidas_en_rango']=[s for s in out['semanas_parciales'] if s>=last.index[0]]
 # monthly
-mm=mon[mon.index>='2024-01']
+mm=mon[mon.index>=ANIOS[0]+'-01']
 out['meses_parciales']=mm[mm.parcial].index.tolist()
 mm=mm[~mm.parcial]
 out['mensual']=[{'mes':i,'vistas':int(r.vistas),'subs':int(r.subs_netos),'rpm':float(r.rpm),'imp':int(r.impresiones),'ctr':float(r.ctr),'ing':float(r.ingresos_usd)} for i,r in mm.iterrows()]
 # videos
 d=c.merge(v,on='video_id',how='inner')
+d=d[d.fecha_publicacion.str[:4].isin(ANIOS)].copy()
+out['periodo_videos']=list(ANIOS)
 out['n_total']=len(d); out['n_cortos']=int((~d.es_largo).sum())
 out['n_nuevos']=int((d.es_largo&(d.dias_publicado<14)).sum())
 f=d[d.es_largo&(d.dias_publicado>=14)].copy()
