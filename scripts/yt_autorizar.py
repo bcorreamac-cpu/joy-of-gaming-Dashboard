@@ -89,7 +89,11 @@ def main():
         'response_type': 'code',
         'scope': ' '.join(ALCANCES),
         'access_type': 'offline',       # sin esto no hay refresh token
-        'prompt': 'consent',            # fuerza uno nuevo aunque ya hayas dado permiso
+        # 'consent' solo fuerza volver a aceptar los permisos: con la sesión ya
+        # abierta Google saltea la elección de cuenta y siempre toma la misma.
+        # 'select_account' obliga a mostrar el selector, que es donde aparecen
+        # las cuentas de marca.
+        'prompt': 'select_account consent',
         'state': estado,
     })
 

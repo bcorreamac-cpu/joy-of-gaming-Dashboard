@@ -45,6 +45,11 @@ DESDE = os.environ.get('YT_DESDE', '2024-01-01')
 # YouTube cierra los datos con unos días de atraso; pedir hasta ayer devuelve
 # cifras que después se mueven. Dos días es el margen que usa el propio Studio.
 ATRASO = int(os.environ.get('YT_ATRASO', '2'))
+# Por defecto el canal es el que la cuenta autorizada tenga por default. Si el
+# canal vive en una cuenta de marca, eso apunta al personal y vuelve vacío:
+# YT_CANAL fuerza cuál mirar, con el ID que empieza con UC.
+CANAL = os.environ.get('YT_CANAL', '').strip()
+IDS = f'channel=={CANAL}' if CANAL else 'channel==MINE'
 
 ANALYTICS = 'https://youtubeanalytics.googleapis.com/v2/reports'
 DATA = 'https://www.googleapis.com/youtube/v3/'
@@ -168,7 +173,7 @@ def serie_diaria(token, d0, d1):
     while ini <= date.fromisoformat(d1):
         fin = min(date(ini.year, 12, 31), date.fromisoformat(d1))
         r = consultar(token, {
-            'ids': 'channel==MINE', 'startDate': ini.isoformat(), 'endDate': fin.isoformat(),
+            'ids': IDS, 'startDate': ini.isoformat(), 'endDate': fin.isoformat(),
             'dimensions': 'day', 'sort': 'day'}, M_CANAL)
         cols = [c['name'] for c in r.get('columnHeaders', [])]
         for f in r.get('rows', []):
@@ -213,10 +218,13 @@ def dato(url, params, token):
 
 def catalogo(token):
     """Todos los uploads del canal con título, fecha y duración."""
-    ch = dato(DATA + 'channels', {'part': 'contentDetails', 'mine': 'true'}, token)
+    p = {'part': 'contentDetails', 'id': CANAL} if CANAL else \
+        {'part': 'contentDetails', 'mine': 'true'}
+    ch = dato(DATA + 'channels', p, token)
     items = ch.get('items') or []
     if not items:
-        sys.exit('La cuenta autorizada no tiene un canal asociado.')
+        sys.exit(f'No se encontró el canal {CANAL}.' if CANAL else
+                 'La cuenta autorizada no tiene un canal asociado.')
     subidas = items[0]['contentDetails']['relatedPlaylists']['uploads']
 
     vids, pagina = {}, None
@@ -270,7 +278,7 @@ def metricas_video(token, ids, d0, d1, lote=200):
     for i in range(0, len(ids), lote):
         trozo = ids[i:i + lote]
         r = consultar(token, {
-            'ids': 'channel==MINE', 'startDate': d0, 'endDate': d1,
+            'ids': IDS, 'startDate': d0, 'endDate': d1,
             'dimensions': 'video', 'filters': 'video==' + ','.join(trozo),
             'maxResults': len(trozo), 'sort': '-views'}, M_VIDEO)
         cols = [c['name'] for c in r.get('columnHeaders', [])]
@@ -315,20 +323,21 @@ def comprobar():
     print('Token renovado: las credenciales sirven.\n')
 
     ayer = (date.today() - timedelta(ATRASO)).isoformat()
-    base = {'ids': 'channel==MINE', 'startDate': ayer, 'endDate': ayer, 'dimensions': 'day'}
+    base = {'ids': IDS, 'startDate': ayer, 'endDate': ayer, 'dimensions': 'day'}
 
     # Sin esto no se sabe si el token mira el canal correcto: un canal vacío
     # también devuelve filas, todas en cero, y parece que funciona.
+    print(f'  Canal pedido: {CANAL or "el que la cuenta tenga por defecto"}')
     try:
-        r = get(ANALYTICS, {'ids': 'channel==MINE', 'startDate': DESDE,
+        r = get(ANALYTICS, {'ids': IDS, 'startDate': DESDE,
                             'endDate': ayer, 'metrics': 'views'}, token)
         v = ((r.get('rows') or [[0]])[0])[0]
-        print(f'  Vistas del canal desde {DESDE}: {v:,.0f}'.replace(',', '.'))
+        print(f'  Vistas desde {DESDE}: ' + f'{v:,.0f}'.replace(',', '.'))
         if not v:
-            print('  OJO: cero vistas. El token está mirando un canal sin datos.')
-        print()
+            print('  OJO: cero vistas. El token mira un canal sin datos.')
     except ErrorAPI as e:
-        print(f'  No se pudo leer el total del canal: {e.codigo}\n')
+        print(f'  No se pudo leer el total del canal: {e.codigo}')
+    print()
 
     # Las dos primeras son imprescindibles; las impresiones, no.
     graves = []
@@ -355,7 +364,7 @@ def comprobar():
                        ('solas, sin dimensión', {}),
                        ('solas, por video    ', {'dimensions': 'video',
                                                  'maxResults': 5})]:
-        p = {'ids': 'channel==MINE', 'startDate': ayer, 'endDate': ayer,
+        p = {'ids': IDS, 'startDate': ayer, 'endDate': ayer,
              'metrics': ','.join(OPCIONALES), **extra}
         try:
             r = get(ANALYTICS, p, token)
@@ -366,7 +375,9 @@ def comprobar():
 
     print()
     try:
-        ch = get(DATA + 'channels', {'part': 'contentDetails,snippet', 'mine': 'true'}, token)
+        p = {'part': 'contentDetails,snippet'}
+        p['id' if CANAL else 'mine'] = CANAL or 'true'
+        ch = get(DATA + 'channels', p, token)
         items = ch.get('items') or []
         if not items:
             print('  FALLA catálogo   la cuenta autorizada no tiene canal propio')
