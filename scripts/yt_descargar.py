@@ -21,7 +21,7 @@ Solo biblioteca estándar.
 """
 import csv, json, os, re, ssl, sys, time, urllib.error, urllib.parse, urllib.request
 
-AYUDA_SSL = '''SSL: tu Python no encuentra los certificados raíz.
+AYUDA_SSL = r'''SSL: tu Python no encuentra los certificados raíz.
 
 Pasa con el Python descargado de python.org en macOS: trae su propio paquete
 de certificados pero no lo instala. Corré esto una vez y listo:
@@ -236,6 +236,15 @@ def catalogo(token):
         if not pagina:
             break
 
+    if not vids:
+        sys.exit(
+            f'La playlist de uploads ({subidas}) no devolvió ningún video '
+            f'publicado desde {DESDE}.\n'
+            'Suele pasar cuando la cuenta autorizada no es la dueña del canal: '
+            'si Joy of Gaming es una cuenta de marca, hay que autorizar con ESA '
+            'cuenta, no con la personal. Corré --comprobar para ver qué canal '
+            'está viendo el token.')
+
     # las duraciones vienen de otro endpoint, de a 50
     ids = list(vids)
     for i in range(0, len(ids), 50):
@@ -327,13 +336,49 @@ def comprobar():
             if esencial:
                 graves.append(etq.strip())
 
+    # Las impresiones fallaron combinadas; puede que solas sí anden.
+    print()
+    for etq, extra in [('solas, por día      ', {'dimensions': 'day'}),
+                       ('solas, sin dimensión', {}),
+                       ('solas, por video    ', {'dimensions': 'video',
+                                                 'sort': '-views', 'maxResults': 5})]:
+        p = {'ids': 'channel==MINE', 'startDate': ayer, 'endDate': ayer,
+             'metrics': ','.join(OPCIONALES), **extra}
+        p.pop('dimensions', None) if not extra.get('dimensions') else None
+        try:
+            r = get(ANALYTICS, p, token)
+            print(f'  OK    impresiones {etq}  filas: {len(r.get("rows") or [])}')
+        except ErrorAPI as e:
+            msg = e.cuerpo.replace('\n', ' ')[:150]
+            print(f'  falla impresiones {etq}  {e.codigo}: {msg}')
+
+    print()
     try:
         ch = get(DATA + 'channels', {'part': 'contentDetails,snippet', 'mine': 'true'}, token)
-        it = (ch.get('items') or [{}])[0]
-        print(f"\n  OK    catálogo (Data API)   canal: "
-              f"{it.get('snippet', {}).get('title', '?')}")
+        items = ch.get('items') or []
+        if not items:
+            print('  FALLA catálogo   la cuenta autorizada no tiene canal propio')
+            graves.append('catálogo')
+        else:
+            it = items[0]
+            subidas = it['contentDetails']['relatedPlaylists']['uploads']
+            print(f"  OK    catálogo   canal: {it.get('snippet', {}).get('title', '?')}"
+                  f"  ({it.get('id')})")
+            r = get(DATA + 'playlistItems',
+                    {'part': 'contentDetails,snippet', 'playlistId': subidas,
+                     'maxResults': 5}, token)
+            tot = r.get('pageInfo', {}).get('totalResults')
+            print(f'        playlist de uploads: {subidas} · {tot} videos en total')
+            for x in r.get('items', [])[:3]:
+                cd = x['contentDetails']
+                print(f"        {(cd.get('videoPublishedAt') or '?')[:10]}  "
+                      f"{x['snippet'].get('title', '')[:56]}")
+            if not r.get('items'):
+                print('        VACÍA. Si el canal es una cuenta de marca, hay que '
+                      'autorizar con esa cuenta, no con la personal.')
+                graves.append('catálogo vacío')
     except ErrorAPI as e:
-        print(f'\n  FALLA catálogo (Data API)   {e.codigo}: {e.cuerpo[:200]}')
+        print(f'  FALLA catálogo   {e.codigo}: {e.cuerpo[:200]}')
         graves.append('catálogo')
 
     print('\nSi "impresiones y CTR" falla, el panel funciona igual: esas dos '
