@@ -76,11 +76,30 @@ def pedir(url, datos):
         sys.exit(f'No se pudo conectar con Google: {e.reason}')
 
 
+def preguntar(etiqueta, pinta, ejemplo):
+    """Pregunta hasta que la respuesta tenga forma de lo que se pidió.
+
+    Si el script quedó esperando y encima le pegan comandos de la terminal, se
+    los come como respuesta y arma una URL con basura. Mejor rechazarlo acá.
+    """
+    for _ in range(5):
+        try:
+            v = input(f'{etiqueta}: ').strip().strip('"\'')
+        except EOFError:
+            sys.exit('\nNo llegó nada por consola.')
+        if pinta(v):
+            return v
+        print(f'  Eso no parece un {etiqueta.lower()}. Se espera algo como {ejemplo}.')
+        print('  (si pegaste un comando por error, pegá solo el valor)\n')
+    sys.exit('Demasiados intentos.')
+
+
 def main():
-    cid = os.environ.get('GOOGLE_CLIENT_ID') or input('Client ID: ').strip()
-    sec = os.environ.get('GOOGLE_CLIENT_SECRET') or input('Client secret: ').strip()
-    if not cid or not sec:
-        sys.exit('Faltan las credenciales del cliente OAuth.')
+    cid = os.environ.get('GOOGLE_CLIENT_ID') or preguntar(
+        'Client ID', lambda v: v.endswith('.apps.googleusercontent.com'),
+        '1234-abcd.apps.googleusercontent.com')
+    sec = os.environ.get('GOOGLE_CLIENT_SECRET') or preguntar(
+        'Client secret', lambda v: len(v) > 8 and ' ' not in v, 'GOCSPX-...')
 
     estado = secrets.token_urlsafe(16)
     url = AUTOR + '?' + urllib.parse.urlencode({
