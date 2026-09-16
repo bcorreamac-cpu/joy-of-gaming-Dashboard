@@ -128,6 +128,14 @@ def consultar(token, params, metricas):
 def token_de_acceso():
     faltan = [k for k in ('YT_CLIENT_ID', 'YT_CLIENT_SECRET', 'YT_REFRESH_TOKEN')
               if not os.environ.get(k)]
+    if faltan and sys.stdin.isatty():
+        # A mano: se piden y listo. En GitHub Actions no hay terminal, así que
+        # ahí sigue siendo un error (los valores tienen que venir de secrets).
+        print('Pegá los tres valores que imprimió yt_autorizar.py:\n')
+        for k in faltan:
+            os.environ[k] = input(f'  {k}: ').strip()
+        print()
+        faltan = [k for k in faltan if not os.environ.get(k)]
     if faltan:
         sys.exit('Faltan variables de entorno: ' + ', '.join(faltan) +
                  '\nSe obtienen una sola vez con scripts/yt_autorizar.py.')
