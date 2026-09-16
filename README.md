@@ -61,12 +61,20 @@ métricas, Data para los títulos, fechas y duraciones.
 
 1. **Proyecto en Google Cloud.** En <https://console.cloud.google.com> creá un
    proyecto y activá dos APIs: *YouTube Analytics API* y *YouTube Data API v3*.
-2. **Pantalla de consentimiento.** Tipo *Externo*. Agregá los tres permisos:
+2. **Permisos.** Desde 2025 esto vive en *APIs y servicios → Google Auth
+   Platform*, con cuatro pestañas: *Branding*, *Audience*, *Data Access* y
+   *Clients*. En **Audience** elegí *Externo*; en **Data Access** usá
+   *Add or remove scopes* y, abajo, **Manually add scopes**, para pegar los tres:
    `yt-analytics.readonly`, `yt-analytics-monetary.readonly`, `youtube.readonly`.
-3. **Publicala.** Cambiá el estado de *Prueba* a **En producción**. Este paso no
-   es opcional: en modo Prueba, Google caduca el permiso **a los 7 días** y la
-   automatización se corta sola. Va a aparecer un aviso de "app no verificada";
-   para uso propio se puede seguir igual.
+3. **Publicala.** En *Audience*, pasá de *Prueba* a **En producción**. En modo
+   Prueba, Google caduca el permiso **a los 7 días** y la automatización se corta
+   sola. Va a aparecer un aviso de "app no verificada"; para uso propio se sigue
+   igual (el límite es 100 usuarios).
+
+   `youtube.readonly` es un permiso **sensible**. Publicar sin verificar suele
+   alcanzar para uso personal, pero la documentación de Google no es del todo
+   clara sobre si el token dura para siempre en ese caso. Por eso corre el
+   *latido* de abajo: si el permiso muere, te enterás al día siguiente.
 4. **Credenciales → ID de cliente de OAuth**, tipo *Aplicación de escritorio*.
    Anotá el *client ID* y el *client secret*.
 5. **Sacá el permiso**, en tu máquina:
@@ -95,6 +103,21 @@ exclusivas de Studio. El descargador no da eso por sentado: las pide, y si el
 API las rechaza avisa y sigue sin ellas. El panel funciona igual, con las
 columnas de CTR vacías. El chequeo del paso 7 te lo confirma en segundos.
 
+### El latido
+
+`.github/workflows/latido.yml` corre todos los días, no toca el repo y solo pide
+un token nuevo. Si el permiso de Google caducó, falla y GitHub te manda un mail.
+Sin esto te enterarías el lunes siguiente, con el panel ya desactualizado.
+
+Podés correr el mismo chequeo a mano:
+
+```
+python3 scripts/yt_descargar.py --comprobar
+```
+
+Sale con código 1 si falta algo imprescindible. Que fallen las impresiones y el
+CTR no cuenta: el panel funciona sin ellas.
+
 ### Dos puertas antes de publicar
 
 El workflow no publica nada que no pase estos dos chequeos:
@@ -111,7 +134,7 @@ un mail cuando una corrida programada falla.
 
 | Síntoma | Causa casi segura |
 |---|---|
-| `invalid_grant` al renovar el token | La pantalla de consentimiento volvió a *Prueba*, o revocaste el acceso. Repetí los pasos 3 y 5. |
+| `invalid_grant` al renovar el token | El permiso caducó: la app volvió a *Prueba*, revocaste el acceso, o Google expiró el token de una app sin verificar. Repetí los pasos 3 y 5. |
 | El workflow dejó de correr solo | GitHub apaga los cron de repos públicos tras 60 días sin actividad. Como esto commitea cada semana, no debería pasar; si pasa, se reactiva desde *Actions*. |
 | Los ingresos del último día vienen vacíos | Normal: YouTube tarda en liquidar. El panel lo avisa. |
 | La página no se actualiza pero el commit está | Revisá *Settings → Pages*: tiene que servir desde la rama `main`. |

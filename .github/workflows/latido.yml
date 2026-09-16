@@ -1,0 +1,32 @@
+name: Latido del token
+
+# El permiso de Google puede caducar solo: si la pantalla de consentimiento
+# quedó en modo Prueba —o si Google decide que la app sigue sin verificar—
+# el refresh token muere a los 7 días. Esperar al lunes para enterarse es
+# tarde: el panel queda con datos viejos y nadie se entera.
+#
+# Esto no baja nada ni toca el repo. Solo pide un token nuevo todos los días.
+# Si falla, GitHub manda un mail y sabés que hay que re-autorizar.
+on:
+  schedule:
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  latido:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: ¿El permiso sigue vivo?
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: python3 scripts/yt_descargar.py --comprobar

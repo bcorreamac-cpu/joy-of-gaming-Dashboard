@@ -277,9 +277,11 @@ def comprobar():
     ayer = (date.today() - timedelta(ATRASO)).isoformat()
     base = {'ids': 'channel==MINE', 'startDate': ayer, 'endDate': ayer, 'dimensions': 'day'}
 
-    for etq, ms in [('métricas base   ', M_CANAL[:4]),
-                    ('ingresos         ', ['estimatedRevenue']),
-                    ('impresiones y CTR', OPCIONALES)]:
+    # Las dos primeras son imprescindibles; las impresiones, no.
+    graves = []
+    for etq, ms, esencial in [('métricas base   ', M_CANAL[:4], True),
+                              ('ingresos         ', ['estimatedRevenue'], True),
+                              ('impresiones y CTR', OPCIONALES, False)]:
         try:
             r = get(ANALYTICS, {**base, 'metrics': ','.join(ms)}, token)
             cols = [c['name'] for c in r.get('columnHeaders', []) if c['name'] != 'day']
@@ -289,8 +291,10 @@ def comprobar():
                 print(f'        {ayer}: ' + ', '.join(
                     f'{c}={v}' for c, v in zip(cols, fila[1:])))
         except ErrorAPI as e:
-            print(f'  FALLA {etq}  {e.codigo}')
+            print(f'  {"FALLA" if esencial else "aviso"} {etq}  {e.codigo}')
             print(f'        {e.cuerpo[:220]}')
+            if esencial:
+                graves.append(etq.strip())
 
     try:
         ch = get(DATA + 'channels', {'part': 'contentDetails,snippet', 'mine': 'true'}, token)
@@ -299,9 +303,14 @@ def comprobar():
               f"{it.get('snippet', {}).get('title', '?')}")
     except ErrorAPI as e:
         print(f'\n  FALLA catálogo (Data API)   {e.codigo}: {e.cuerpo[:200]}')
+        graves.append('catálogo')
 
     print('\nSi "impresiones y CTR" falla, el panel funciona igual: esas dos '
           'columnas quedan vacías.')
+    if graves:
+        print('\nFalta algo imprescindible: ' + ', '.join(graves))
+        return 1
+    return 0
 
 
 # ── main ──────────────────────────────────────────────────────────────────
