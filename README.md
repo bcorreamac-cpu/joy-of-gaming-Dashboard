@@ -39,7 +39,70 @@ los lotes en pantalla difieren demasiado.
 datos disponibles, la variación no se muestra: se dice cuántos períodos faltan.
 Un −93 % contra un hueco es peor que no mostrar nada.
 
-## Actualizar con data nueva
+## Actualización automática
+
+Todos los lunes a las 11:00 UTC, GitHub Actions baja los datos de YouTube,
+reconstruye el panel y lo publica. No hace falta tener la computadora
+prendida: corre en los servidores de GitHub.
+
+```
+.github/workflows/actualizar.yml   el cron y los pasos
+scripts/yt_autorizar.py            permiso de YouTube (se corre UNA vez)
+scripts/yt_descargar.py            baja los datos y escribe data/entrada/
+scripts/guardia.py                 frena una publicación que empeore los datos
+```
+
+`yt_descargar.py` escribe CSV con **los mismos encabezados** que los exports de
+YouTube Studio, así que el resto del proceso no distingue si los datos llegaron
+a mano o por API. Usa dos APIs, porque ninguna trae todo: Analytics para las
+métricas, Data para los títulos, fechas y duraciones.
+
+### Puesta en marcha (una vez, ~15 minutos)
+
+1. **Proyecto en Google Cloud.** En <https://console.cloud.google.com> creá un
+   proyecto y activá dos APIs: *YouTube Analytics API* y *YouTube Data API v3*.
+2. **Pantalla de consentimiento.** Tipo *Externo*. Agregá los tres permisos:
+   `yt-analytics.readonly`, `yt-analytics-monetary.readonly`, `youtube.readonly`.
+3. **Publicala.** Cambiá el estado de *Prueba* a **En producción**. Este paso no
+   es opcional: en modo Prueba, Google caduca el permiso **a los 7 días** y la
+   automatización se corta sola. Va a aparecer un aviso de "app no verificada";
+   para uso propio se puede seguir igual.
+4. **Credenciales → ID de cliente de OAuth**, tipo *Aplicación de escritorio*.
+   Anotá el *client ID* y el *client secret*.
+5. **Sacá el permiso**, en tu máquina:
+   ```
+   python3 scripts/yt_autorizar.py
+   ```
+   Abre el navegador, elegís la cuenta del canal y aceptás. Imprime los tres
+   valores que necesitás.
+6. **Guardalos como secrets** en *Settings → Secrets and variables → Actions*:
+   `YT_CLIENT_ID`, `YT_CLIENT_SECRET`, `YT_REFRESH_TOKEN`.
+   El repo es público: nunca los pongas en un archivo.
+7. **Probalo** en la pestaña *Actions → Actualizar el panel → Run workflow*.
+   No esperes al lunes para saber si funciona.
+
+### Dos puertas antes de publicar
+
+El workflow no publica nada que no pase estos dos chequeos:
+
+- **`validar.py`** — 55 chequeos: que los datos sean coherentes consigo mismos.
+- **`guardia.py`** — que no empeoren a los publicados: que el corte no
+  retroceda, que no se pierdan días ni videos, que las vistas no caigan más de
+  2 % (YouTube reajusta cifras hacia atrás, por eso la tolerancia).
+
+Si alguno falla, el job se cae y **el panel queda como estaba**. GitHub te manda
+un mail cuando una corrida programada falla.
+
+### Si algo se rompe
+
+| Síntoma | Causa casi segura |
+|---|---|
+| `invalid_grant` al renovar el token | La pantalla de consentimiento volvió a *Prueba*, o revocaste el acceso. Repetí los pasos 3 y 5. |
+| El workflow dejó de correr solo | GitHub apaga los cron de repos públicos tras 60 días sin actividad. Como esto commitea cada semana, no debería pasar; si pasa, se reactiva desde *Actions*. |
+| Los ingresos del último día vienen vacíos | Normal: YouTube tarda en liquidar. El panel lo avisa. |
+| La página no se actualiza pero el commit está | Revisá *Settings → Pages*: tiene que servir desde la rama `main`. |
+
+## Actualizar a mano con data nueva
 
 Los exports de YouTube Studio se cortan en **500 filas**, así que hay que
 partirlos y juntarlos después. El script acepta varios archivos por tipo.

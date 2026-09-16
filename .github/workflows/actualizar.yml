@@ -1,0 +1,73 @@
+name: Actualizar el panel
+
+# Todos los lunes a las 11:00 UTC (08:00 en Chile en verano, 07:00 en invierno).
+# GitHub puede atrasar una corrida programada si está con carga; no es un error.
+on:
+  schedule:
+    - cron: '0 11 * * 1'
+  workflow_dispatch:
+    inputs:
+      hasta:
+        description: 'Último día a pedir (YYYY-MM-DD). Vacío = hoy menos 2 días.'
+        required: false
+        type: string
+
+# Dos corridas a la vez se pisarían al hacer push.
+concurrency:
+  group: actualizar-panel
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Copia de lo que está publicado, para comparar contra lo que baje ahora.
+      - name: Guardar la versión publicada
+        run: cp data/analytics.json /tmp/anterior.json
+
+      - name: Bajar los datos de YouTube
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          YT_HASTA: ${{ inputs.hasta }}
+        run: python3 scripts/yt_descargar.py
+
+      - name: Reconstruir analytics.json
+        run: python3 scripts/build_analytics.py
+
+      # Dos puertas antes de publicar. La primera pregunta si los datos son
+      # coherentes consigo mismos; la segunda, si no empeoran a los que ya
+      # están arriba. Si alguna falla, el job se cae y el panel queda como
+      # estaba: es preferible a publicar cifras rotas.
+      - name: Validar los datos
+        run: python3 scripts/validar.py
+
+      - name: Comparar contra lo publicado
+        run: python3 scripts/guardia.py /tmp/anterior.json
+
+      - name: Regenerar el dashboard
+        run: python3 scripts/render_dashboard.py
+
+      - name: Publicar si algo cambió
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/analytics.json dashboard.html
+          if git diff --cached --quiet; then
+            echo 'Sin cambios: YouTube no movió nada desde la última corrida.'
+            exit 0
+          fi
+          corte=$(python3 -c "import json;print(json.load(open('data/analytics.json'))['meta']['corte'])")
+          git commit -m "Datos al $corte (corrida automática semanal)"
+          git push

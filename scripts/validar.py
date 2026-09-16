@@ -118,7 +118,9 @@ for k, m in mes.items():
     q[f"{k[:4]}-Q{(int(k[5:7])-1)//3+1}"] += m['v']; a[k[:4]] += m['v']
 chk(abs(sum(q.values())-cv) < 1, "suma de quarters = suma de días")
 chk(abs(sum(a.values())-cv) < 1, "suma de años = suma de días")
-chk(len(mes) == 33, f"meses en la serie: {len(mes)}")
+esperados_mes = (d1.year - d0.year) * 12 + (d1.month - d0.month) + 1
+chk(len(mes) == esperados_mes,
+    f"meses en la serie: {len(mes)} (el rango {fs[0]}→{fs[-1]} cubre {esperados_mes})")
 
 # meses parciales: solo el del corte
 completos = [k for k in mes if k not in meta['meses_parciales']]
@@ -126,7 +128,10 @@ import calendar
 mal = [k for k in completos
        if sum(1 for d in fs if d.startswith(k)) != calendar.monthrange(int(k[:4]),int(k[5:7]))[1]]
 chk(not mal, f"meses marcados completos que no lo están: {mal}")
-chk(meta['meses_parciales'] == ['2026-09'], f"meses parciales: {meta['meses_parciales']}")
+# Solo el primer y el último mes pueden estar cortados: los del medio, no.
+bordes = {fs[0][:7], fs[-1][:7]}
+chk(set(meta['meses_parciales']) <= bordes,
+    f"meses parciales solo en los bordes: {meta['meses_parciales'] or 'ninguno'}")
 
 # ── 7. categorías ─────────────────────────────────────────────────────
 cats = Counter(v['cat'] for v in vids)
