@@ -225,7 +225,7 @@ def dato(url, params, token):
         raise SystemExit(f'El API de Data respondió {e.codigo}\n{e.cuerpo}')
 
 
-def catalogo(token):
+def catalogo(token, hasta=None):
     """Todos los uploads del canal con título, fecha y duración."""
     p = {'part': 'contentDetails', 'id': CANAL} if CANAL else \
         {'part': 'contentDetails', 'mine': 'true'}
@@ -236,7 +236,7 @@ def catalogo(token):
                  'La cuenta autorizada no tiene un canal asociado.')
     subidas = items[0]['contentDetails']['relatedPlaylists']['uploads']
 
-    vids, pagina, ocultos = {}, None, 0
+    vids, pagina, ocultos, nuevos = {}, None, 0, 0
     while True:
         p = {'part': 'contentDetails,snippet,status', 'playlistId': subidas,
              'maxResults': 50}
@@ -248,6 +248,9 @@ def catalogo(token):
             pub = (cd.get('videoPublishedAt') or sn.get('publishedAt') or '')[:10]
             if not pub or pub < DESDE:
                 continue                    # fuera de la ventana del dashboard
+            if hasta and pub > hasta:
+                nuevos += 1                 # salió después del último día medido
+                continue
             # Con el token del dueño la playlist trae también borradores,
             # privados y no listados. Nunca tuvieron audiencia: entrarían con
             # cero vistas y hundirían todos los promedios.
@@ -260,8 +263,13 @@ def catalogo(token):
         if not pagina:
             break
 
-    if ocultos:
-        print(f'  ({ocultos} videos privados o no listados quedaron fuera)')
+    if ocultos or nuevos:
+        fuera = []
+        if ocultos:
+            fuera.append(f'{ocultos} privados o no listados')
+        if nuevos:
+            fuera.append(f'{nuevos} publicados después del {hasta}, todavía sin métricas')
+        print('  (fuera: ' + '; '.join(fuera) + ')')
     if not vids:
         sys.exit(
             f'La playlist de uploads ({subidas}) no devolvió ningún video '
@@ -277,13 +285,21 @@ def catalogo(token):
         r = dato(DATA + 'videos', {'part': 'contentDetails', 'id': ','.join(ids[i:i + 50])}, token)
         for it in r.get('items', []):
             vids[it['id']]['dur'] = iso_a_segundos(it['contentDetails'].get('duration', ''))
+    # Duración 0 es lo que devuelve YouTube para un directo; sin duración, el
+    # API ni contestó por ese id. En los dos casos no se puede decidir si es
+    # short o video largo, y el umbral de Shorts es una regla de duración.
+    sin_dur = [k for k, v in vids.items() if not v.get('dur')]
+    for k in sin_dur:
+        del vids[k]
+    if sin_dur:
+        print(f'  ({len(sin_dur)} sin duración utilizable —directos— quedaron fuera)')
     return vids
 
 
 def iso_a_segundos(v):
-    """'PT1M49S' -> 109."""
-    m = re.fullmatch(r'P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:([\d.]+)S)?', v or '')
-    if not m:
+    """'PT1M49S' -> 109. La T es opcional: los directos vienen como 'P0D'."""
+    m = re.fullmatch(r'P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:([\d.]+)S)?)?', v or '')
+    if not m or not v:
         return ''
     d, h, mi, s = (float(x or 0) for x in m.groups())
     return int(d * 86400 + h * 3600 + mi * 60 + s)
@@ -446,7 +462,7 @@ def main():
     escribir_canal(dias, os.path.join(ENTRADA, 'canal_api.csv'))
     print(f"canal_api.csv   {len(dias)} días ({dias[0]['day']} → {dias[-1]['day']})")
 
-    cat = catalogo(token)
+    cat = catalogo(token, hasta)
     met = metricas_video(token, list(cat), DESDE, hasta)
     escribir_videos(cat, met, os.path.join(ENTRADA, 'videos_api.csv'))
     sin = len(cat) - len(met)
