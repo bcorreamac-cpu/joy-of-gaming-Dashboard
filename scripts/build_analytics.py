@@ -18,6 +18,7 @@ from calendar import monthrange
 RAIZ = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 ENTRADA = os.path.join(RAIZ, 'data', 'entrada')
 ANIOS = ('2024', '2025', '2026')          # periodo que cubre el dashboard
+DESDE = ANIOS[0] + '-01-01'               # nada anterior entra, ni dias ni videos
 SHORT_CORTO, SHORT_LARGO = 60, 180        # umbrales de Shorts, en segundos
 SHORT_CAMBIO = '2024-10-15'               # YouTube subió el tope a 3 min
 
@@ -151,8 +152,8 @@ for ruta in f_videos:
             continue            # los tramos por año no se pisan, pero por las dudas
         ids.add(vid)
         pub = fecha_pub(col(f, 'tiempo de publicacion', 'fecha de publicacion'))
-        if pub is None:
-            continue
+        if pub is None or pub.isoformat() < DESDE:
+            continue            # fuera de la ventana del dashboard
         dur = a_segundos(col(f, 'duracion') if 'duracion promedio' not in norm('duracion') else '')
         dur = a_segundos(next((v for k, v in f.items()
                                if k.startswith('duracion') and 'promedio' not in k), ''))

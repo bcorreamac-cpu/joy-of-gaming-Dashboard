@@ -70,18 +70,20 @@ coincidieron. El dashboard muestra cuántos quedan sin clasificar.
 
 ## Límites conocidos
 
-- **Historial recortado antes de 2024.** El export por video mide dentro de la
-  ventana pedida, no desde que el video salió. Los publicados antes de 2024
-  muestran solo lo que juntaron de 2024 en adelante. Para los de 2024 en
-  adelante el acumulado es completo. El panel lo avisa cuando corresponde.
+- **La ventana arranca en enero 2024.** `DESDE` en `scripts/build_analytics.py`
+  descarta todo lo anterior, días y videos. Así el acumulado por video es
+  completo: cada uno entra con toda su historia, no con un pedazo.
+- **Los dos modos no miden el mismo universo, y está bien.** En OFF entran los
+  296 videos publicados desde 2024 con sus vistas acumuladas. En ON entran
+  todas las vistas del canal en esas fechas, incluidas las que sigue trayendo
+  el catálogo anterior a 2024 — que es la mayor parte. Comparar un total de OFF
+  contra uno de ON no tiene sentido.
 - **Categorías en modo ON.** Repartir por categoría las vistas de un período
   necesita un export con una fila por video y por día. Sin eso, la sección de
   categorías con el switch en ON muestra el catálogo acumulado.
-- **YouTube no cuadra consigo mismo.** En los exports por video, la suma de las
-  filas difiere de la fila "Total" del propio archivo en 39 suscriptores sobre
-  47.124 (0,08 %). Se respetan las filas.
-- **Videos anteriores a 2020.** El filtro de YouTube no deja seleccionarlos:
-  quedan fuera unas 31 mil vistas de 27 millones (0,1 %).
+- **YouTube no cuadra consigo mismo.** En los exports por video tal como los
+  entrega YouTube, la suma de las filas difiere de la fila "Total" del propio
+  archivo en 39 suscriptores sobre 47.124 (0,08 %). Se respetan las filas.
 
 ## Reglas de cálculo
 
