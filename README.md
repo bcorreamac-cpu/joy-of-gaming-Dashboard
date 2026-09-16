@@ -192,6 +192,17 @@ categorías y todos los pares en juego ningún orden de colores se distingue bie
 así que identifica la etiqueta sobre cada burbuja. Una etiqueta que no entra sin
 pisar a otra no se dibuja — el dato sigue en el tooltip y en la tabla.
 
+## Impresiones y CTR: histórico congelado
+
+El API de YouTube **no entrega impresiones ni CTR** (responde `The query is not
+supported`, probado por día, sin dimensión y por video). Los exports manuales de
+Studio sí las traían.
+
+Para no perder lo ya medido, esas dos columnas quedaron congeladas en
+`data/historico/`: 988 días y 295 videos, de 2024-01-01 al 2026-09-14. El
+descargador las reinyecta cuando el API no las devuelve. De esa fecha en
+adelante, el CTR queda vacío hasta que Google las exponga.
+
 ## Validación
 
 ```

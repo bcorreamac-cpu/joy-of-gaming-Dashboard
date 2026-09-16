@@ -51,6 +51,8 @@ ATRASO = int(os.environ.get('YT_ATRASO', '2'))
 CANAL = os.environ.get('YT_CANAL', '').strip()
 IDS = f'channel=={CANAL}' if CANAL else 'channel==MINE'
 
+HISTORICO = os.path.join(RAIZ, 'data', 'historico')
+
 ANALYTICS = 'https://youtubeanalytics.googleapis.com/v2/reports'
 DATA = 'https://www.googleapis.com/youtube/v3/'
 TOKEN = 'https://oauth2.googleapis.com/token'
@@ -193,16 +195,23 @@ def serie_diaria(token, d0, d1):
 
 
 def escribir_canal(filas, ruta):
+    hist = historico('impresiones_dias.csv')
+    usados = 0
     with open(ruta, 'w', newline='', encoding='utf-8-sig') as fh:
         w = csv.writer(fh)
         w.writerow(CAB_CANAL)
         for d in filas:
             vistas = d.get('views') or 0
             ing = d.get('estimatedRevenue')
+            imp, ctr = d.get('videoThumbnailImpressions'), \
+                d.get('videoThumbnailImpressionsClickRate')
+            if imp is None and d['day'] in hist:
+                imp, ctr = ctr_de(*hist[d['day']])
+                usados += 1
             w.writerow([
                 d['day'],
-                num(d.get('videoThumbnailImpressions')),
-                num(d.get('videoThumbnailImpressionsClickRate')),
+                num(imp),
+                num(ctr),
                 num(d.get('subscribersGained')),
                 num(d.get('subscribersLost')),
                 '' if not ing or not vistas else round(ing / (vistas / 1000), 3),
@@ -210,11 +219,37 @@ def escribir_canal(filas, ruta):
                 num(round((d.get('estimatedMinutesWatched') or 0) / 60, 4)),
                 num(ing),
             ])
+    if usados:
+        print(f'  ({usados} días con impresiones del histórico congelado)')
 
 
 def num(v):
     """Un None se escribe vacío, no como cero: no es lo mismo."""
     return '' if v is None else v
+
+
+def historico(archivo):
+    """Impresiones y clicks congelados de los exports de YouTube Studio.
+
+    El API no entrega impresiones ni CTR. Los exports manuales sí las traían,
+    así que lo ya medido se guarda y se sigue usando: perder 33 meses de CTR
+    porque la fuente nueva no lo expone sería tirar dato bueno. De la fecha del
+    congelado en adelante, esas columnas quedan vacías.
+    """
+    ruta = os.path.join(HISTORICO, archivo)
+    if not os.path.exists(ruta):
+        return {}
+    with open(ruta, encoding='utf-8-sig') as fh:
+        return {f[0]: (f[1], f[2]) for f in list(csv.reader(fh))[1:] if len(f) >= 3}
+
+
+def ctr_de(imp, clicks):
+    """El CSV guarda clicks; la columna del export es un porcentaje."""
+    try:
+        i, c = float(imp), float(clicks)
+        return (i, round(c / i * 100, 4)) if i else ('', '')
+    except (TypeError, ValueError):
+        return ('', '')
 
 
 # ── Data API: catálogo del canal ──────────────────────────────────────────
@@ -323,6 +358,7 @@ def metricas_video(token, ids, d0, d1, lote=200):
 
 
 def escribir_videos(cat, met, ruta):
+    hist = historico('impresiones_videos.csv')
     with open(ruta, 'w', newline='', encoding='utf-8-sig') as fh:
         w = csv.writer(fh)
         w.writerow(CAB_VIDEOS)
@@ -335,6 +371,9 @@ def escribir_videos(cat, met, ruta):
             # ...salvo si el API ni siquiera expone la métrica: ahí va vacío,
             # porque "no lo sabemos" no es "fueron cero".
             imp = cero('videoThumbnailImpressions') if HAY_CTR else ''
+            ctr = num(m.get('videoThumbnailImpressionsClickRate'))
+            if not HAY_CTR and v['id'] in hist:
+                imp, ctr = ctr_de(*hist[v['id']])
             w.writerow([
                 v['id'], v['titulo'], v['pub'], num(v.get('dur')),
                 num(m.get('averageViewPercentage')),
@@ -342,7 +381,7 @@ def escribir_videos(cat, met, ruta):
                 cero('views'),
                 num(m.get('averageViewDuration')),
                 imp,
-                num(m.get('videoThumbnailImpressionsClickRate')),
+                ctr,
             ])
 
 
