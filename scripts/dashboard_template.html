@@ -362,6 +362,9 @@ const RANGO_VID=(()=>{const ps=VIDEOS.map(v=>v.pub.slice(0,7)).sort();
    video: uno publicado antes de que empiece la ventana llega con su historial
    recortado. */
 const VENTANA_INI=(D.meta.ventana_videos||[])[0];
+/* Dias cuyo ingreso YouTube todavia no cerro: llegan en null y suman como
+   cero, asi que los ingresos y el RPM de ese mes salen cortos. */
+const SIN_ING=new Set(D.meta.dias_sin_ingresos||[]);
 
 /* ── 2. estado ───────────────────────────────────────────── */
 const S={modo:'B',gran:'mes',comp:'prev',metrica:'v',tipo:'linea',
@@ -409,9 +412,9 @@ function cerrar(o){
   o.rpm=o.v?o.ing/(o.v/1000):null;
   o.vpv=o.n?o.v/o.n:null;
   o.edad=o.n?o.edadSum/o.n:null;
-  o.s1k=o.v?o.sg/(o.v/1000)*1000/1000:null;
-  if(o.v) o.s1k=o.sg/o.v*1000;
-  if(!o.subsOk){o.sg=null;o.sp=null}
+  o.s1k=o.v?o.sg/o.v*1000:null;
+  // sin el desglose completo, cualquier suma de subs del periodo sale corta
+  if(!o.subsOk){o.sg=null;o.sp=null;o.s1k=null}
   return o;
 }
 /* modo B: todo lo ocurrido en el período, sin importar cuándo se publicó */
@@ -616,8 +619,8 @@ function dispersion(host,pts){
 /* ── 5. categorías ───────────────────────────────────────── */
 function porCategoria(){
   /* En modo A se recorta a los videos publicados en el período. En modo B no
-     se puede recortar: metricas_video.csv no tiene fecha, así que se muestra
-     el catálogo completo y se avisa. */
+     se puede recortar: el export por video trae acumulados sin fecha, así que
+     se muestran todos los videos de la ventana y se avisa. */
   const base=S.modo==='A'?VIDEOS.filter(v=>pasa(v.pub.slice(0,7))):VIDEOS;
   const acc=new Map();
   for(const v of base){
@@ -660,7 +663,7 @@ function render(){
     : `Todo lo que ocurrió entre esas fechas, sin importar cuándo se publicó cada video. Responde: ¿cuánto generó el canal?`;
   $('swexp').innerHTML=S.modo==='A'
     ? `<b>Switch OFF.</b> Filtro por <b>fecha de publicación</b>. Un video publicado en ${describir()} aporta <b>todas</b> sus vistas acumuladas, incluidas las de meses posteriores.`
-    : `<b>Switch ON.</b> Filtro por <b>fecha en que se generó la métrica</b>. Cuentan las vistas ocurridas en ${describir()}, las haya traído un video de ese mes o uno de 2023.`;
+    : `<b>Switch ON.</b> Filtro por <b>fecha en que se generó la métrica</b>. Cuentan las vistas ocurridas en ${describir()}, las haya traído un video de ese mes o uno publicado antes de ${VENTANA_INI}.`;
   $('s-switch').setAttribute('aria-checked',String(S.modo==='B'));
   $('lab-off').classList.toggle('on',S.modo==='A');
   $('lab-on').classList.toggle('on',S.modo==='B');
@@ -692,7 +695,7 @@ function render(){
     barras($('c-subs'),ss,rot,x=>fmt(x,0),marcas);
     leyenda($('subs-leg'),ss,true);
     $('subs-note').textContent=S.modo==='A'?'ganados por los videos del período'
-      :'sólo el neto: metricas_canal.csv no está cargado';
+      :'sólo el neto: los CSV del canal no traen el desglose';
   }
   linea($('c-ctr'),[{t:'CTR',datos:filas.map(r=>r.ctr),color:'#f5b84b'}],rot,x=>fmt(x,2)+' %');
 
@@ -704,7 +707,7 @@ function render(){
   ULT.cats=cats;
   $('cats-sub').textContent=S.modo==='A'
     ? `Métricas acumuladas de los ${tot.n} videos publicados en ${describir()}, agrupadas por categoría.`
-    : `Catálogo completo (${VIDEOS.length} videos). Con el switch en ON las categorías no se recortan por fecha — ver nota al pie.`;
+    : `Los ${VIDEOS.length} videos publicados desde ${VENTANA_INI}, con su acumulado. Con el switch en ON las categorías no se recortan por fecha — ver nota al pie.`;
   $('share-n').textContent=`${cats.reduce((a,c)=>a+c.n,0)} videos`;
   compartir($('c-share'),cats);
   dispersion($('c-scatter'),cats.filter(c=>c.n>=3).map(c=>({t:catL(c.cat),x:c.vpv,y:c.ctr||0,n:c.n,tot:c.vistas})));
@@ -736,31 +739,34 @@ function tarjeta(k,tot,cmp){
     <div class="k-f">${esc(lbl)}${S.modo==='A'&&k.k!=='n'?` · ${tot.n} videos`:''}</div></div>`;
 }
 
+/* Un mes de cada año, superpuestos. Se acumula igual que serieA/serieB y se
+   cierra al final: CTR, vistas/video y RPM son razones, sumarlas celda a celda
+   da cero o cualquier cosa. */
 function overlay(host,m){
   const porAnio=new Map();
-  for(const f of MESES){
-    if(!pasa(f.p))continue;
-    const y=f.p.slice(0,4),mm=+f.p.slice(5,7);
+  const celda=(y,mm)=>{
     if(!porAnio.has(y))porAnio.set(y,Array(12).fill(null));
-    const fila=S.modo==='A'?null:f;
-    if(fila)porAnio.get(y)[mm-1]=valorMes(fila,m);
-  }
+    const a=porAnio.get(y);
+    return a[mm-1]||(a[mm-1]=vacio());
+  };
   if(S.modo==='A'){
     for(const v of VIDEOS){
       const p=v.pub.slice(0,7);if(!pasa(p))continue;
-      const y=p.slice(0,4),mm=+p.slice(5,7);
-      if(!porAnio.has(y))porAnio.set(y,Array(12).fill(null));
-      const a=porAnio.get(y);a[mm-1]=(a[mm-1]||0)+(m.k==='n'?1:v[m.k==='v'?'v':m.k]||0);
+      const o=celda(p.slice(0,4),+p.slice(5,7));
+      o.v+=v.v||0;o.i+=v.i||0;o.c+=v.c||0;o.sg+=v.sg||0;o.n++;o.edadSum+=diasDesde(v.pub);
+    }
+  }else{
+    for(const f of MESES){
+      if(!pasa(f.p))continue;
+      const o=celda(f.p.slice(0,4),+f.p.slice(5,7));
+      o.v+=f.v||0;o.i+=f.i||0;o.c+=f.c||0;o.ing+=f.ing||0;o.sn+=f.sn||0;
+      if(f.sg==null)o.subsOk=false;else{o.sg+=f.sg;o.sp+=f.sp||0}
     }
   }
-  const series=[...porAnio.entries()].sort().map(([y,datos],i)=>({t:y,datos,color:PAL[i%PAL.length]}));
+  const series=[...porAnio.entries()].sort().map(([y,celdas],i)=>
+    ({t:y,datos:celdas.map(o=>o?cerrar(o)[m.k]:null),color:PAL[i%PAL.length]}));
   linea(host,series,MES,m.f);
   leyenda($('evo-leg'),series);
-}
-function valorMes(f,m){
-  const o=cerrar(Object.assign(vacio(),{v:f.v||0,i:f.i||0,c:f.c||0,sg:f.sg||0,sp:f.sp||0,
-    sn:f.sn||0,ing:f.ing||0,n:0,subsOk:f.sg!=null}));
-  return o[m.k];
 }
 function comparacion(filas,m){
   const n=filas.length;
@@ -843,8 +849,11 @@ function avisos(filas,tot){
     if(es.length>1&&Math.max(...es)/Math.max(1,Math.min(...es))>1.5) out.push(['warn','!',
       `<b>Lotes de distinta antigüedad.</b> El acumulado depende del tiempo que cada video lleva publicado: el lote más viejo en pantalla lleva ${fmt(Math.max(...es),0)} días y el más nuevo ${fmt(Math.min(...es),0)}. Es correcto para responder "cuánto generó cada lote", pero al comparar períodos mirá la columna <b>antigüedad media</b> antes de concluir que un lote rindió peor.`]);
   }
-  if(S.modo==='A'&&D.meta.n_videos_canal&&VIDEOS.length<D.meta.n_videos_canal) out.push(['warn','!',
-    `<b>Muestra parcial.</b> Hay ${VIDEOS.length} de ${D.meta.n_videos_canal} videos cargados: los CSV no están en el repo. Con el switch en OFF, y en la sección de categorías, los números salen de esa muestra y no del catálogo completo.`]);
+  if(S.modo==='B'&&SIN_ING.size){
+    const meses=[...new Set([...SIN_ING].map(f=>f.slice(0,7)))].filter(pasa);
+    if(meses.length) out.push(['warn','!',
+      `<b>Ingresos sin cerrar.</b> YouTube todavía no liquidó ${fmt(SIN_ING.size,0)} día(s) en ${meses.map(m=>rotulo(m)).join(', ')}: el export los trae vacíos. Suman como cero, así que <b>Ingresos</b> y <b>RPM</b> de ese período están por debajo del valor final. Las vistas y los subs de esos días sí están completos.`]);
+  }
   if(filas.some(r=>r.parcial)) out.push(['warn','!',
     `<b>Períodos incompletos.</b> ${filas.filter(r=>r.parcial).map(r=>rotulo(r.k)).join(', ')} no está cerrado. Se marca punteado en los gráficos y como "parcial" en la tabla; no lo compares de frente contra períodos completos.`]);
   if(S.gran==='anio'&&S.anios.has('2026')) out.push(['info','i',
@@ -857,9 +866,9 @@ function avisos(filas,tot){
   if(N_SHORTS||N_NUEVOS) out.push(['info','i',
     `<b>Qué videos entran.</b> Del catálogo se excluyen ${fmt(N_SHORTS,0)} shorts y ${fmt(N_NUEVOS,0)} videos con menos de ${MIN_DIAS} días publicados (todavía no juntaron sus vistas y hundirían el promedio del lote). Quedan <b>${fmt(VIDEOS.length,0)}</b>.`]);
   if(S.modo==='B'&&!TIENE_SUBS_DESGLOSE) out.push(['info','i',
-    `<b>Subs sólo en neto.</b> El desglose ganados / perdidos por mes está en <code>metricas_canal.csv</code>, que no está cargado. El neto sí es correcto.`]);
+    `<b>Subs sólo en neto.</b> Los CSV del canal cargados no traen el desglose ganados / perdidos mes a mes. El neto sí es correcto.`]);
   if(S.modo==='B') out.push(['info','i',
-    `<b>Con el switch en ON las categorías no siguen el filtro temporal.</b> Para repartir entre categorías las vistas de un período haría falta saber qué video generó cada vista cada día, y <code>metricas_video.csv</code> no trae fechas. La sección 04 muestra el catálogo acumulado. Poné el switch en OFF y las categorías sí se recortan, por fecha de publicación.`]);
+    `<b>Con el switch en ON las categorías no siguen el filtro temporal.</b> Para repartir entre categorías las vistas de un período haría falta saber qué video generó cada vista cada día, y el export por video trae acumulados sin fecha. La sección 04 muestra los ${fmt(VIDEOS.length,0)} videos de la ventana con su acumulado, que no cubre las vistas que sigue trayendo el catálogo anterior a ${VENTANA_INI}: leé los porcentajes como reparto entre categorías, no como parte de las vistas del período. Poné el switch en OFF y las categorías sí se recortan, por fecha de publicación.`]);
   $('avisos').innerHTML=out.map(([c,ic,t])=>
     `<div class="note ${c}"><span class="ic">${ic}</span><div>${t}</div></div>`).join('');
 }

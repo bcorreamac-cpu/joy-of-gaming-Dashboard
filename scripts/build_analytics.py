@@ -125,6 +125,10 @@ if not dias:
     sys.exit('Los canal_*.csv no trajeron ningún día dentro de ' + '/'.join(ANIOS))
 serie = [dias[k] for k in sorted(dias)]
 
+# YouTube tarda unos dias en cerrar los ingresos: los ultimos dias del export
+# llegan con la celda vacia. Se guardan como null, no como cero, y se avisan.
+sin_ingresos = sorted(d['f'] for d in serie if d['ing'] is None)
+
 # huecos: el export se parte en tramos y es fácil perder un día en el empalme
 d0, d1 = date.fromisoformat(serie[0]['f']), date.fromisoformat(serie[-1]['f'])
 esperados = {(d0 + timedelta(n)).isoformat() for n in range((d1 - d0).days + 1)}
@@ -154,7 +158,7 @@ for ruta in f_videos:
         pub = fecha_pub(col(f, 'tiempo de publicacion', 'fecha de publicacion'))
         if pub is None or pub.isoformat() < DESDE:
             continue            # fuera de la ventana del dashboard
-        dur = a_segundos(col(f, 'duracion') if 'duracion promedio' not in norm('duracion') else '')
+        # 'duracion', nunca 'duracion promedio de vistas'
         dur = a_segundos(next((v for k, v in f.items()
                                if k.startswith('duracion') and 'promedio' not in k), ''))
         imp, ctr = num(col(f, 'impresiones')), num(col(f, 'tasa de clics', 'ctr'))
@@ -175,6 +179,8 @@ for ruta in f_videos:
             'dur': dur,
             'edad': (corte_d - pub).days,
         })
+if not videos:
+    sys.exit(f'Los videos_*.csv no trajeron ningún video publicado desde {DESDE}.')
 videos.sort(key=lambda v: v['pub'])
 
 # ── salida ────────────────────────────────────────────────────────────────
@@ -187,6 +193,7 @@ salida = {
         'meses_parciales': meses_parciales,
         'semanas_parciales': semanas_parciales,
         'dias_faltantes': huecos,
+        'dias_sin_ingresos': sin_ingresos,
         # metricas_video.csv trae acumulados sin fecha: no se puede aislar
         # "vistas ocurridas en el periodo" video por video.
         'video_serie_temporal': False,
@@ -204,11 +211,13 @@ salida = {
 json.dump(salida, open(os.path.join(RAIZ, 'data', 'analytics.json'), 'w'),
           ensure_ascii=False)
 
-print(f"analytics.json")
+print("analytics.json")
 print(f"  días   : {len(serie)} ({serie[0]['f']} → {corte})"
       + (f"  ¡{len(huecos)} faltantes!" if huecos else "  sin huecos"))
 print(f"  videos : {len(videos)} ({salida['meta']['n_largos']} largos, "
       f"{len(videos) - salida['meta']['n_largos']} shorts)")
 print(f"  meses incompletos  : {meses_parciales or 'ninguno'}")
+if sin_ingresos:
+    print(f"  sin ingresos aun   : {len(sin_ingresos)} días ({sin_ingresos[0]} → {sin_ingresos[-1]})")
 sin = sum(1 for v in videos if v['cat'] == 'OTROS')
 print(f"  sin clasificar     : {sin} videos ({sin / len(videos) * 100:.1f} %)")

@@ -68,7 +68,26 @@ de juego, en `data/categorias.json` — editable, se evalúan en orden y gana la
 primera que coincide. Validado contra 30 videos etiquetados a mano: 29
 coincidieron. El dashboard muestra cuántos quedan sin clasificar.
 
+## Validación
+
+```
+python3 scripts/validar.py
+```
+
+55 chequeos sobre `data/analytics.json`: continuidad de la serie diaria,
+duplicados, rangos, nulos, clasificación short/largo, cuadratura contra las
+filas "Total" de los propios exports y coherencia de las agregaciones por mes,
+quarter y año. Sale con código 1 si algo no cuadra.
+
 ## Límites conocidos
+
+- **Los últimos días llegan sin ingresos.** YouTube tarda en liquidar: el
+  export trae la celda vacía. Se guardan como `null` (no como cero) y quedan
+  listados en `meta.dias_sin_ingresos`; el panel avisa cuando el período
+  seleccionado incluye alguno, porque los ingresos y el RPM de ese mes salen
+  por debajo del valor final.
+- **% reproducido por encima de 100 %.** Pasa en Shorts: el bucle hace que se
+  vean más de una vez. No entran al panel de todos modos.
 
 - **La ventana arranca en enero 2024.** `DESDE` en `scripts/build_analytics.py`
   descarta todo lo anterior, días y videos. Así el acumulado por video es
