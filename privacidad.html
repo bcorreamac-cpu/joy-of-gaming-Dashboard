@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Joy Of Gaming · Política de privacidad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#080a10;--panel:#0e121b;--line:#1e2533;--line2:#2b3446;
+  --ink:#eef1f8;--ink2:#a9b2c4;--muted:#75809a;--acento:#3987e5;
+  --display:"Chakra Petch","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font:15px/1.65 var(--body);margin:0;padding:0 20px 72px}
+.wrap{max-width:720px;margin:0 auto}
+header{padding:48px 0 8px;border-bottom:1px solid var(--line);margin-bottom:32px}
+h1{font:700 clamp(26px,4vw,34px)/1.1 var(--display);margin:0 0 10px;text-transform:uppercase;letter-spacing:-.01em}
+h2{font:600 17px var(--display);margin:34px 0 10px;color:var(--ink)}
+.eyebrow{font:600 11px var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--acento);margin-bottom:8px}
+p,li{color:var(--ink2)}
+li{margin-bottom:7px}
+b,strong{color:var(--ink);font-weight:600}
+a{color:var(--acento)}
+.fecha{color:var(--muted);font-size:13px}
+.caja{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin:20px 0}
+footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+</style>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Joy of Gaming</div>
+    <h1>Política de privacidad</h1>
+    <p class="fecha">Última actualización: 16 de septiembre de 2026</p>
+  </header>
+
+  <p>
+    Este sitio publica estadísticas del canal de YouTube <b>Joy of Gaming</b>. El
+    proyecto es personal y de un solo usuario: el dueño del canal. No tiene
+    usuarios registrados, no ofrece cuentas y no recibe datos de terceros.
+  </p>
+
+  <h2>Qué datos se usan</h2>
+  <p>
+    Una tarea automática lee, con permiso del dueño del canal y a través de las
+    APIs oficiales de YouTube, los datos del <b>propio canal</b>:
+  </p>
+  <ul>
+    <li>Métricas diarias del canal: vistas, impresiones de miniaturas, tasa de
+      clics, suscriptores ganados y perdidos, tiempo de reproducción e ingresos
+      estimados.</li>
+    <li>Métricas por video: vistas, impresiones, tasa de clics, suscriptores
+      obtenidos, porcentaje promedio reproducido y duración promedio de vista.</li>
+    <li>Catálogo del canal: título, fecha de publicación y duración de cada video.</li>
+  </ul>
+
+  <div class="caja">
+    <p style="margin:0">
+      <b>No se accede a datos de otras personas.</b> Los permisos concedidos son
+      de solo lectura y alcanzan únicamente a la cuenta que los autorizó. No se
+      leen comentarios, mensajes, contactos ni información de espectadores
+      individuales.
+    </p>
+  </div>
+
+  <h2>Para qué se usan</h2>
+  <p>
+    Para un único fin: construir el panel de análisis de este sitio. Los datos se
+    agregan por mes, trimestre, año y categoría de contenido, y se publican como
+    cifras agregadas del canal.
+  </p>
+  <p>
+    <b>No se venden, no se comparten con terceros, no se usan para publicidad</b>
+    y no alimentan ningún otro producto o servicio.
+  </p>
+
+  <h2>Dónde se guardan</h2>
+  <ul>
+    <li>Las cifras agregadas quedan en el repositorio público del proyecto, que
+      es lo que se ve en este sitio.</li>
+    <li>Las credenciales de acceso a la API se guardan cifradas como
+      <i>secrets</i> de GitHub Actions. No están en el repositorio ni son
+      visibles para nadie más que el dueño de la cuenta.</li>
+    <li>No hay base de datos, ni servidor propio, ni copias fuera de lo anterior.</li>
+  </ul>
+
+  <h2>Cookies y seguimiento</h2>
+  <p>
+    Este sitio es HTML estático. <b>No usa cookies, ni analítica, ni píxeles de
+    seguimiento.</b> El panel guarda algunas preferencias de visualización en el
+    navegador de quien lo mira; esa información no sale de ese navegador.
+  </p>
+
+  <h2>Cómo revocar el acceso</h2>
+  <p>
+    El dueño del canal puede retirar el permiso en cualquier momento desde
+    <a href="https://myaccount.google.com/permissions">la página de permisos de
+    su cuenta de Google</a>. Al hacerlo, la tarea automática deja de funcionar de
+    inmediato y no vuelve a leer ningún dato.
+  </p>
+
+  <h2>Contacto</h2>
+  <p>
+    Por cualquier consulta sobre esta política, se puede abrir un asunto en el
+    <a href="https://github.com/bcorreamac-cpu/joy-of-gaming-Dashboard/issues">repositorio
+    del proyecto</a>.
+  </p>
+
+  <footer>
+    <a href="./">Volver al inicio</a> · <a href="./dashboard.html">Panel de análisis</a>
+  </footer>
+</div>
+</html>
