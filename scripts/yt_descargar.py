@@ -19,7 +19,24 @@ Dos APIs distintas, porque ninguna trae todo:
 
 Solo biblioteca estándar.
 """
-import csv, json, os, re, sys, time, urllib.error, urllib.parse, urllib.request
+import csv, json, os, re, ssl, sys, time, urllib.error, urllib.parse, urllib.request
+
+AYUDA_SSL = '''SSL: tu Python no encuentra los certificados raíz.
+
+Pasa con el Python descargado de python.org en macOS: trae su propio paquete
+de certificados pero no lo instala. Corré esto una vez y listo:
+
+    /Applications/Python\ 3.X/Install\ Certificates.command
+
+(reemplazá 3.X por tu versión; también está en Finder -> Aplicaciones ->
+Python 3.X -> Install Certificates.command)
+
+Después volvé a correr este script.'''
+
+
+def es_certificado(e):
+    """¿El error es 'no encuentro los certificados raíz'?"""
+    return isinstance(getattr(e, 'reason', None), ssl.SSLCertVerificationError)
 from datetime import date, timedelta
 
 RAIZ = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
@@ -72,6 +89,8 @@ def get(url, params, token, intentos=4):
                 continue
             raise ErrorAPI(e.code, cuerpo)
         except urllib.error.URLError as e:
+            if es_certificado(e):
+                raise SystemExit('\n' + AYUDA_SSL)   # reintentar no lo arregla
             if n < intentos - 1:
                 time.sleep(2 ** n * 2)
                 continue
@@ -122,6 +141,10 @@ def token_de_acceso():
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
             return json.load(r)['access_token']
+    except urllib.error.URLError as e:
+        if es_certificado(e):
+            sys.exit('\n' + AYUDA_SSL)
+        raise
     except urllib.error.HTTPError as e:
         sys.exit('No se pudo renovar el token: ' + e.read().decode()[:300] +
                  '\n\nSi dice invalid_grant, el refresh token caducó. Suele pasar '

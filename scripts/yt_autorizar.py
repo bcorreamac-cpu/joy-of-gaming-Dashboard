@@ -12,7 +12,24 @@ publicarla. El README lo explica paso a paso.
 
 Solo biblioteca estándar.
 """
-import http.server, json, os, secrets, sys, threading, urllib.parse, urllib.request, webbrowser
+import http.server, json, os, secrets, ssl, sys, threading, urllib.parse, urllib.request, webbrowser
+
+AYUDA_SSL = '''SSL: tu Python no encuentra los certificados raíz.
+
+Pasa con el Python descargado de python.org en macOS: trae su propio paquete
+de certificados pero no lo instala. Corré esto una vez y listo:
+
+    /Applications/Python\ 3.X/Install\ Certificates.command
+
+(reemplazá 3.X por tu versión; también está en Finder -> Aplicaciones ->
+Python 3.X -> Install Certificates.command)
+
+Después volvé a correr este script.'''
+
+
+def es_certificado(e):
+    """¿El error es 'no encuentro los certificados raíz'?"""
+    return isinstance(getattr(e, 'reason', None), ssl.SSLCertVerificationError)
 
 AUTOR = 'https://accounts.google.com/o/oauth2/v2/auth'
 TOKEN = 'https://oauth2.googleapis.com/token'
@@ -53,6 +70,10 @@ def pedir(url, datos):
             return json.load(r)
     except urllib.error.HTTPError as e:
         sys.exit(f'Google respondió {e.code}: {e.read().decode()[:400]}')
+    except urllib.error.URLError as e:
+        if es_certificado(e):
+            sys.exit('\n' + AYUDA_SSL)
+        sys.exit(f'No se pudo conectar con Google: {e.reason}')
 
 
 def main():
