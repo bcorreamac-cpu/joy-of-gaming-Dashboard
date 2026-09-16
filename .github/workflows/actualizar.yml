@@ -11,6 +11,11 @@ on:
         description: 'Último día a pedir (YYYY-MM-DD). Vacío = hoy menos 2 días.'
         required: false
         type: string
+      aceptar_baja:
+        description: 'Publicar aunque los datos bajen (solo al migrar de fuente)'
+        required: false
+        default: false
+        type: boolean
 
 # Dos corridas a la vez se pisarían al hacer push.
 concurrency:
@@ -60,6 +65,8 @@ jobs:
         run: python3 scripts/validar.py
 
       - name: Comparar contra lo publicado
+        env:
+          GUARDIA_ACEPTAR_BAJA: ${{ inputs.aceptar_baja && '1' || '' }}
         run: python3 scripts/guardia.py /tmp/anterior.json
 
       - name: Regenerar el dashboard

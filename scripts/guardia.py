@@ -9,9 +9,13 @@ devuelve medio canal pasa todos los chequeos internos y publica un desastre.
 Sale con 1 si el panel iría para atrás. Sin argumento, o si el archivo anterior
 no existe, no hay con qué comparar y deja pasar.
 """
-import json, sys
+import json, os, sys
 
 TOLERANCIA = 0.02      # YouTube reajusta cifras hacia atrás; un 2 % es normal
+# Cambiar de fuente mueve el piso una vez: el corte queda un día más atrás, los
+# privados dejan de contarse. Eso no es una regresión y hay que poder aceptarlo
+# a mano, pero solo a mano: en las corridas automáticas la guardia sigue dura.
+ACEPTAR = os.environ.get('GUARDIA_ACEPTAR_BAJA', '').strip() == '1'
 
 
 def cargar(ruta):
@@ -54,6 +58,10 @@ def main():
     hv, hn = len(viejo['meta']['dias_faltantes']), len(nuevo['meta']['dias_faltantes'])
     chk(hn <= hv, f'no aparecen huecos nuevos: {hv} → {hn}')
 
+    if fallas and ACEPTAR:
+        print(f'\nguardia: {len(fallas)} problema(s), aceptados a mano '
+              '(GUARDIA_ACEPTAR_BAJA=1). Se publica igual.')
+        return 0
     if fallas:
         print(f'\nguardia: {len(fallas)} problema(s). No se publica.')
         return 1
