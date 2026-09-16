@@ -68,6 +68,27 @@ de juego, en `data/categorias.json` — editable, se evalúan en orden y gana la
 primera que coincide. Validado contra 30 videos etiquetados a mano: 29
 coincidieron. El dashboard muestra cuántos quedan sin clasificar.
 
+## Diseño de los gráficos
+
+La paleta categórica está **validada**, no elegida a ojo: banda de luminosidad,
+piso de croma, separación bajo daltonismo, piso de visión normal y contraste
+contra la superficie real de los paneles (`#0e121b`). Ocho slots en orden fijo,
+asignados por categoría y nunca por ranking — ordenar una columna de la tabla no
+repinta nada. "Sin clasificar" lleva un gris neutro: es un bucket, no una
+categoría más, y no gasta un slot.
+
+Reglas de marca: barra de 24 px como máximo, con el extremo de dato redondeado y
+la base cuadrada, separadas por 2 px del color del fondo; línea de 2 px con
+marcadores de 8 px y anillo de 2 px; relleno de área al 10 %; grilla hairline
+sólida. Los ejes caen siempre en números redondos. Una sola serie no lleva
+leyenda, dos o más sí. El texto nunca se pinta del color de la serie: la
+identidad la lleva la marca al lado.
+
+En el gráfico de volumen vs. eficiencia el color **no** codifica nada: con nueve
+categorías y todos los pares en juego ningún orden de colores se distingue bien,
+así que identifica la etiqueta sobre cada burbuja. Una etiqueta que no entra sin
+pisar a otra no se dibuja — el dato sigue en el tooltip y en la tabla.
+
 ## Validación
 
 ```

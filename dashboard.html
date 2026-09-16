@@ -8,21 +8,35 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
+/* ── tokens ───────────────────────────────────────────────
+   Paleta categórica validada contra la superficie de los paneles (#0e121b):
+   banda de luminosidad, piso de croma, separación para daltonismo, piso de
+   visión normal y contraste. Los 8 slots se asignan por categoría, en orden
+   fijo, nunca por ranking: si ordenás la tabla, los colores no se mueven. */
 :root{
   color-scheme:dark;
-  --bg:#07090f;--panel:#0e121b;--panel2:#141a26;--line:#1f2736;--line2:#2a3446;
-  --ink:#eef1f8;--ink2:#aab2c5;--muted:#6f7a93;
-  --accent:#4d8dff;--accent-soft:rgba(77,141,255,.13);--glow:rgba(77,141,255,.35);
-  --modoA:#c07cff;--modoA-soft:rgba(192,124,255,.13);--modoA-line:rgba(192,124,255,.5);
-  --modoB:#4d8dff;--modoB-soft:rgba(77,141,255,.13);--modoB-line:rgba(77,141,255,.5);
-  --good:#3ddc97;--good-bg:rgba(61,220,151,.1);--bad:#ff5d6c;--bad-bg:rgba(255,93,108,.1);
-  --warn:#f5b84b;--warn-bg:rgba(245,184,75,.1);
+  /* superficies */
+  --bg:#080a10;--panel:#0e121b;--panel2:#151b27;
+  --line:#1e2533;      /* grilla: un paso sobre la superficie, sólida */
+  --line2:#2b3446;     /* eje base y bordes */
+  --ink:#eef1f8;--ink2:#a9b2c4;--muted:#75809a;
+  /* categóricos, orden fijo */
+  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;
+  --s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767;
+  --s-otros:#6b7689;   /* el bucket "Sin clasificar" nunca toma un slot */
+  /* estado: reservados, jamás se reutilizan como serie */
+  --good:#0ca30c;--warn:#fab219;--crit:#d03b3b;
+  --good-bg:rgba(12,163,12,.14);--bad-bg:rgba(208,59,59,.14);--warn-bg:rgba(250,178,25,.12);
+  /* modo del switch */
+  --modoA:#9085e9;--modoA-soft:rgba(144,133,233,.13);--modoA-line:rgba(144,133,233,.42);
+  --modoB:#3987e5;--modoB-soft:rgba(57,135,229,.13);--modoB-line:rgba(57,135,229,.42);
+  --mode:var(--modoB);--mode-soft:var(--modoB-soft);--mode-line:var(--modoB-line);
+  --glow:rgba(57,135,229,.28);
   --display:"Chakra Petch","Segoe UI",system-ui,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
-  --mode:var(--modoB);--mode-soft:var(--modoB-soft);--mode-line:var(--modoB-line);
 }
-[data-modo="A"]{--mode:var(--modoA);--mode-soft:var(--modoA-soft);--mode-line:var(--modoA-line)}
+[data-modo="A"]{--mode:var(--modoA);--mode-soft:var(--modoA-soft);--mode-line:var(--modoA-line);--glow:rgba(144,133,233,.28)}
 *{box-sizing:border-box}
 html,body{background:var(--bg)}
 body{color:var(--ink);font:14px/1.55 var(--body);margin:0;padding:0 16px 64px;
@@ -52,7 +66,8 @@ h3{font:600 13px var(--display);margin:0;letter-spacing:.03em;color:var(--ink2);
 .ctrl-row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
 .fld{display:flex;flex-direction:column;gap:7px;min-width:0}
 .fld>label{font:500 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}
+.seg{display:flex;flex-wrap:wrap;background:var(--panel2);border:1px solid var(--line);
+  border-radius:9px;padding:3px;gap:2px;max-width:100%}
 .seg button{font:600 12px var(--body);color:var(--ink2);background:none;border:0;border-radius:6px;
   padding:6px 12px;cursor:pointer;white-space:nowrap;transition:.15s}
 .seg button:hover{color:var(--ink)}
@@ -81,14 +96,37 @@ select:focus-visible,input:focus-visible,.tg:focus-visible,.seg button:focus-vis
   background:var(--modoA);padding:0;position:relative;cursor:pointer;transition:background .25s}
 .sw[aria-checked="true"]{background:var(--modoB)}
 .sw .knob{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
-  background:#07090f;transition:transform .25s cubic-bezier(.4,1.6,.5,1)}
+  background:var(--bg);transition:transform .25s cubic-bezier(.4,1.6,.5,1)}
 .sw[aria-checked="true"] .knob{transform:translateX(30px)}
 .sw:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 .swexp{margin:9px 0 0;font-size:12.5px;color:var(--ink2)}
 .swexp b{color:var(--ink)}
 .kpi .k-u{font-size:11.5px;color:var(--mode);margin-top:3px;line-height:1.35}
 
+/* ── cifra principal (una sola por vista) ───────────────── */
+.hero{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:20px 22px;display:flex;align-items:flex-end;gap:26px;flex-wrap:wrap;
+  position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0 0 auto 0;height:2px;background:var(--mode)}
+.hero .h-l{font:500 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.hero .h-v{font:600 clamp(40px,6vw,56px)/1 var(--body);letter-spacing:-.03em;margin:8px 0 0;
+  font-variant-numeric:proportional-nums}
+.hero .h-u{font-size:12.5px;color:var(--ink2);margin:7px 0 0;max-width:46ch}
+.hero .h-d{display:flex;flex-direction:column;gap:7px;margin-left:auto;align-items:flex-end}
+.spark{display:block;width:164px;height:46px;overflow:visible}
+
 /* ── avisos ─────────────────────────────────────────────── */
+.plegable{margin-top:14px;border:1px solid var(--line);border-radius:11px;background:var(--panel2)}
+.plegable>summary{cursor:pointer;padding:11px 14px;font:500 12.5px var(--body);color:var(--ink2);
+  list-style:none;display:flex;align-items:center;gap:9px;border-radius:10px}
+.plegable>summary::-webkit-details-marker{display:none}
+.plegable>summary::before{content:"";width:0;height:0;border:5px solid transparent;
+  border-left-color:var(--muted);transition:transform .15s;flex:none}
+.plegable[open]>summary::before{transform:rotate(90deg) translateX(-1px)}
+.plegable>summary:hover{color:var(--ink)}
+.plegable>summary:focus-visible{outline:2px solid var(--mode);outline-offset:-2px}
+.plegable .note{margin:0 10px 10px}
+.plegable .note:first-of-type{margin-top:2px}
 .note{display:flex;gap:11px;border-radius:11px;padding:12px 14px;margin-top:14px;font-size:13px;line-height:1.5}
 .note .ic{flex:none;width:19px;height:19px;border-radius:5px;display:grid;place-items:center;
   font:700 12px var(--display);margin-top:1px}
@@ -104,7 +142,7 @@ section{margin-top:34px;scroll-margin-top:70px}
 .sh{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:14px}
 .sh .sub{color:var(--ink2);font-size:12.5px;margin:0;max-width:62ch}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px}
-.ph{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
+.ph{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
 .grid{display:grid;gap:13px}
 .g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
 .g3{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
@@ -114,33 +152,44 @@ section{margin-top:34px;scroll-margin-top:70px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:14px 15px;position:relative;overflow:hidden}
 .kpi::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--mode);opacity:.75}
 .kpi .k-t{font:500 10.5px var(--mono);letter-spacing:.11em;text-transform:uppercase;color:var(--muted)}
-.kpi .k-v{font:700 27px/1.1 var(--display);margin:7px 0 9px;letter-spacing:-.01em}
-.kpi .k-v small{font:500 14px var(--display);color:var(--ink2)}
+/* Cifras grandes en la sans del cuerpo y con figuras proporcionales: la
+   display es para titulares, y tabular-nums deja "121" suelto a este tamaño. */
+.kpi .k-v{font:600 27px/1.1 var(--body);margin:7px 0 9px;letter-spacing:-.015em;
+  font-variant-numeric:proportional-nums}
+.kpi .k-v small{font:500 14px var(--body);color:var(--ink2)}
 .deltas{display:flex;gap:6px;flex-wrap:wrap}
 .d{font:500 11px var(--mono);border-radius:6px;padding:2px 7px;white-space:nowrap}
 .d.up{background:var(--good-bg);color:var(--good)}
-.d.dn{background:var(--bad-bg);color:var(--bad)}
+.d.dn{background:var(--bad-bg);color:var(--crit)}
 .d.flat{background:var(--panel2);color:var(--ink2)}
 .kpi .k-f{font-size:11.5px;color:var(--muted);margin-top:9px;line-height:1.4}
 
 /* ── charts ─────────────────────────────────────────────── */
 .chart{width:100%;position:relative}
 .chart svg{display:block;width:100%;height:auto;overflow:visible}
-.gl{stroke:var(--line);stroke-width:1}
-.axl{font:500 10px var(--mono);fill:var(--muted)}
+.gl{stroke:var(--line);stroke-width:1}          /* hairline sólida, nunca punteada */
+.gl.base{stroke:var(--line2)}
+.axl{font:500 10px var(--mono);fill:var(--muted);font-variant-numeric:tabular-nums}
+.dlab{font:600 10.5px var(--body);fill:var(--ink2)}
 .bar{transition:opacity .12s}
-.bar:hover{opacity:.75}
-.dot{transition:r .12s}
+.hit:hover+.bar,.bar.on{opacity:.82}
+.cross{stroke:var(--line2);stroke-width:1;opacity:0}
+.cross.on{opacity:1}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font:500 11.5px var(--mono);color:var(--ink2);margin-top:9px}
-.legend i{width:11px;height:3px;border-radius:2px;display:inline-block;margin-right:6px;vertical-align:middle}
-.legend .sq{width:10px;height:10px;border-radius:3px}
-.tip{position:absolute;pointer-events:none;z-index:20;background:#070a11;border:1px solid var(--line2);
+.legend i{width:13px;height:2px;border-radius:1px;display:inline-block;margin-right:7px;vertical-align:middle}
+.legend .sq{width:10px;height:10px;border-radius:2px}
+/* fixed, no absolute: se posiciona con clientX/clientY, que son coordenadas de
+   viewport. Con position:absolute el tooltip se iba fuera de pantalla apenas la
+   página estaba scrolleada. */
+.tip{position:fixed;pointer-events:none;z-index:40;background:#070a11;border:1px solid var(--line2);
   border-radius:9px;padding:9px 11px;font:500 11.5px var(--mono);color:var(--ink);
   box-shadow:0 10px 30px rgba(0,0,0,.6);white-space:nowrap;opacity:0;transition:opacity .1s}
 .tip.on{opacity:1}
 .tip .tt{color:var(--muted);font-size:10px;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px}
-.tip .tr{display:flex;justify-content:space-between;gap:14px}
-.tip .tr b{font-weight:600}
+.tip .tr{display:flex;justify-content:space-between;gap:16px;align-items:center;line-height:1.7}
+.tip .tr span{color:var(--ink2);display:flex;align-items:center;gap:7px}
+.tip .tr i{width:12px;height:2px;border-radius:1px;flex:none}
+.tip .tr b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
 
 /* ── tablas ─────────────────────────────────────────────── */
 .tw{overflow-x:auto;margin:0 -15px;padding:0 15px}
@@ -152,16 +201,19 @@ th:hover{color:var(--ink)}
 th[aria-sort] {color:var(--mode)}
 th.l,td.l{text-align:left}
 tbody tr:hover{background:var(--panel2)}
-td.num{font:500 12.5px var(--mono)}
+td.num{font:500 12.5px var(--mono);font-variant-numeric:tabular-nums}
 .tag{font:500 10.5px var(--mono);border:1px solid var(--line2);border-radius:5px;padding:1px 6px;color:var(--ink2)}
 .tag.warn{border-color:rgba(245,184,75,.45);color:var(--warn)}
-.sbar{height:5px;border-radius:3px;background:var(--mode);opacity:.8;min-width:2px}
+.sbar{height:8px;border-radius:0 4px 4px 0;min-width:3px}   /* extremo de dato redondeado */
+.sbar-t{background:var(--panel2);border-radius:0 4px 4px 0}
 .mini{font-size:11px;color:var(--muted)}
 footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
 footer ul{margin:10px 0 0;padding-left:18px}
 footer li{margin-bottom:6px;line-height:1.5}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-@media (max-width:640px){.ctrl-row{gap:16px}.kpi .k-v{font-size:23px}}
+@media (max-width:640px){.ctrl-row{gap:16px}.kpi .k-v{font-size:23px}
+  .hero{padding:16px}.hero .h-d{margin-left:0;align-items:flex-start}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
@@ -247,7 +299,18 @@ footer li{margin-bottom:6px;line-height:1.5}
       <div><div class="eyebrow">01 · Indicadores</div><h2 id="kpi-h">Resumen del período</h2></div>
       <p class="sub" id="kpi-sub"></p>
     </div>
-    <div class="grid kpis" id="kpis"></div>
+    <div class="hero" id="hero">
+      <div style="min-width:0">
+        <div class="h-l" id="hero-l"></div>
+        <div class="h-v" id="hero-v">—</div>
+        <p class="h-u" id="hero-u"></p>
+      </div>
+      <div class="h-d">
+        <div class="deltas" id="hero-d"></div>
+        <div id="hero-spark"></div>
+      </div>
+    </div>
+    <div class="grid kpis" id="kpis" style="margin-top:13px"></div>
   </section>
 
   <!-- ── evolución ── -->
@@ -335,7 +398,19 @@ const MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','di
 const MESL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const CATL=D.meta.cat_etiquetas||{};
 const catL=c=>CATL[c]||c;
-const PAL=['#4d8dff','#3ddc97','#f5b84b','#c07cff','#ff5d6c','#38d6d6','#9aa8c7'];
+/* Ocho slots categóricos en orden fijo. El color sigue a la categoría, no a su
+   posición en la tabla: reordenar una columna no repinta nada. "Sin clasificar"
+   no es una categoría más, así que lleva un gris neutro y no gasta un slot. */
+const PAL=['#3987e5','#d95926','#199e70','#c98500','#d55181','#008300','#9085e9','#e66767'];
+const GRIS='#6b7689';
+const COLOR_CAT=(()=>{
+  const m={}; let i=0;
+  for(const k of Object.keys(CATL)) m[k]=k==='OTROS'?GRIS:PAL[i++]||GRIS;
+  return m;
+})();
+const catC=c=>COLOR_CAT[c]||GRIS;
+/* El acento del modo activo: violeta para OFF (publicados), azul para ON. */
+const acentoDe=()=>S.modo==='A'?PAL[6]:PAL[0];
 
 /* ── 1. normalización de la fuente ────────────────────────
    build_analytics.py entrega días; el puente interino entrega meses ya
@@ -377,7 +452,7 @@ const SIN_ING=new Set(D.meta.dias_sin_ingresos||[]);
 /* ── 2. estado ───────────────────────────────────────────── */
 const S={modo:'B',gran:'mes',comp:'prev',metrica:'v',tipo:'linea',
   anios:new Set(ANIOS_CANAL),quarters:new Set([1,2,3,4]),meses:new Set([1,2,3,4,5,6,7,8,9,10,11,12]),
-  ordCat:{k:'vistas',dir:-1},ordDatos:{k:'p',dir:1}};
+  ordCat:{k:'vistas',dir:-1},ordDatos:{k:'p',dir:1},notasAbiertas:false};
 
 /* Los rotulos dicen de que universo sale cada numero: en OFF todo es
    "acumulado" (lo que junto el video desde que se publico), en ON todo es
@@ -508,14 +583,45 @@ function comparar(){
 }
 const baseUsable=b=>b&&!b.incompleta?b:null;
 
-/* ── 4. gráficos (SVG a mano, sin dependencias) ──────────── */
-const W=760,H=230,PAD={t:14,r:14,b:26,l:46};
+/* ── 4. gráficos (SVG a mano, sin dependencias) ──────────
+   Specs fijas: barra <=24px con el extremo de dato redondeado 4px y la base
+   cuadrada, separadas por 2px del color de la superficie; línea de 2px con
+   marcadores de 8px y anillo de 2px; relleno de área al 10 %; grilla hairline
+   sólida. Nada de bordes alrededor de las marcas: separa el hueco. */
+const W=760,H=240,PAD={t:16,r:16,b:28,l:48};
 const IW=W-PAD.l-PAD.r, IH=H-PAD.t-PAD.b;
+const SUP='#0e121b';          // color de la superficie: hueco y anillo
+const ANCHO_MAX=14, HUECO=2, RADIO=4, HIT=24;
 const tip=$('tip');
-function conTip(el,cont,host){
-  el.addEventListener('pointerenter',e=>{tip.innerHTML=cont;tip.classList.add('on');mover(e)});
+
+/* Los rótulos y los valores del tooltip vienen de los datos: se insertan como
+   texto, nunca como HTML. */
+function filaTip(color,nombre,valor){
+  const r=document.createElement('div');r.className='tr';
+  const s1=document.createElement('span');
+  const i=document.createElement('i');i.style.background=color;
+  s1.append(i,document.createTextNode(nombre));
+  const b=document.createElement('b');b.textContent=valor;
+  r.append(s1,b);return r;
+}
+function cajaTip(titulo,filas){
+  const f=document.createDocumentFragment();
+  const t=document.createElement('span');t.className='tt';t.textContent=titulo;
+  f.append(t,...filas);return f;
+}
+/* El foco de teclado muestra exactamente lo mismo que el puntero. */
+function conTip(el,cont,alEntrar,alSalir){
+  const abrir=e=>{tip.replaceChildren(typeof cont==='function'?cont():cont);
+    tip.classList.add('on');alEntrar&&alEntrar();mover(e)};
+  const cerrar=()=>{tip.classList.remove('on');alSalir&&alSalir()};
+  el.addEventListener('pointerenter',abrir);
   el.addEventListener('pointermove',mover);
-  el.addEventListener('pointerleave',()=>tip.classList.remove('on'));
+  el.addEventListener('pointerleave',cerrar);
+  el.addEventListener('focus',e=>{abrir(cajaPos(el));});
+  el.addEventListener('blur',cerrar);
+  el.setAttribute('tabindex','0');
+  function cajaPos(n){const r=n.getBoundingClientRect();
+    return{clientX:r.left+r.width/2,clientY:r.top}}
   function mover(e){const r=tip.getBoundingClientRect();
     let x=e.clientX+14,y=e.clientY-r.height-10;
     if(x+r.width>innerWidth-8)x=e.clientX-r.width-14;
@@ -526,101 +632,231 @@ function svg(h=H){const s=document.createElementNS('http://www.w3.org/2000/svg',
   s.setAttribute('viewBox',`0 0 ${W} ${h}`);s.setAttribute('role','img');return s}
 const el=(n,a={})=>{const e=document.createElementNS('http://www.w3.org/2000/svg',n);
   for(const k in a)e.setAttribute(k,a[k]);return e};
+/* Paso "lindo" (1, 2, 5 × 10^n): las marcas del eje caen en números redondos.
+   Se excluye el 2,5 a propósito: obliga a decimales y compact() lo dibujaría
+   como "3", que es una marca de eje que miente. */
+function pasoLindo(bruto){
+  if(!(bruto>0))return 1;
+  const e=Math.pow(10,Math.floor(Math.log10(bruto))), f=bruto/e;
+  return (f<=1?1:f<=2?2:f<=5?5:10)*e;
+}
 function escalaY(vals,h=IH){
   const fin=vals.filter(v=>v!=null&&isFinite(v));
   let hi=Math.max(0,...fin),lo=Math.min(0,...fin);
   if(hi===lo)hi=lo+1;
-  const pad=(hi-lo)*.12;hi+=pad;if(lo<0)lo-=pad;
-  return{lo,hi,y:v=>PAD.t+h-(v-lo)/(hi-lo)*h}
+  const paso=pasoLindo((hi-lo)/4);
+  hi=Math.ceil(hi/paso)*paso; lo=Math.floor(lo/paso)*paso;
+  if(hi===lo)hi=lo+paso;
+  return{lo,hi,paso,y:v=>PAD.t+h-(v-lo)/(hi-lo)*h}
 }
-function ejes(s,esc,rot,fm,h=IH){
-  const paso=(esc.hi-esc.lo)/4;
-  for(let i=0;i<=4;i++){const v=esc.lo+paso*i,y=esc.y(v);
-    s.appendChild(el('line',{x1:PAD.l,x2:W-PAD.r,y1:y,y2:y,class:'gl',opacity:i?.5:1}));
-    const t=el('text',{x:PAD.l-7,y:y+3.5,class:'axl','text-anchor':'end'});t.textContent=fm(v);s.appendChild(t);}
+const posX=(i,n,banda)=>banda
+  ? PAD.l+IW/Math.max(n,1)*(i+.5)
+  : PAD.l+(n===1?IW/2:IW*i/(n-1));
+function ejes(s,esc,rot,fm,h=IH,banda=false){
+  for(let v=esc.lo;v<=esc.hi+esc.paso*1e-9;v+=esc.paso){
+    const y=esc.y(v), cero=Math.abs(v)<esc.paso*1e-9;
+    s.appendChild(el('line',{x1:PAD.l,x2:W-PAD.r,y1:y,y2:y,class:'gl'+(cero?' base':'')}));
+    const t=el('text',{x:PAD.l-8,y:y+3.5,class:'axl','text-anchor':'end'});t.textContent=fm(v);s.appendChild(t);}
+  /* El último rótulo se fuerza para anclar el final de la serie, pero se cae si
+     se va a montar sobre el anterior. */
   const salto=Math.max(1,Math.ceil(rot.length/11));
-  rot.forEach((r,i)=>{if(i%salto&&i!==rot.length-1)return;
-    const x=PAD.l+(rot.length===1?IW/2:IW*i/(rot.length-1));
-    const t=el('text',{x,y:PAD.t+h+17,class:'axl','text-anchor':'middle'});t.textContent=r;s.appendChild(t)});
+  const px=i=>posX(i,rot.length,banda);
+  const puestos=[];
+  rot.forEach((r,i)=>{
+    const ultimo=i===rot.length-1;
+    if(i%salto&&!ultimo)return;
+    const x=px(i);
+    if(ultimo&&puestos.length&&x-puestos.at(-1).x<44){
+      s.removeChild(puestos.pop().nodo);       // el anterior cede el lugar
+    }
+    const t=el('text',{x,y:PAD.t+h+18,class:'axl','text-anchor':'middle'});
+    t.textContent=r;s.appendChild(t);puestos.push({x,nodo:t})});
 }
+const col=(se,i)=>se.color||PAL[i%PAL.length];
+/* El año conserva su color aunque se deseleccionen otros. */
+const ANIOS_TODOS=[...new Set([...ANIOS_CANAL,...ANIOS_VIDEO])].sort();
+const colAnio=y=>PAL[ANIOS_TODOS.indexOf(y)%PAL.length];
+
 function linea(host,series,rot,fmTip,_marcas){
   host.innerHTML='';const s=svg();
   const esc=escalaY(series.flatMap(x=>x.datos));
   ejes(s,esc,rot,v=>compact(v));
-  const px=i=>PAD.l+(rot.length===1?IW/2:IW*i/(rot.length-1));
+  const px=i=>posX(i,rot.length,false);
+
+  /* El lector apunta a una fecha, no a una línea de 2px: la cruz encuentra la X
+     y el tooltip lista todas las series de esa posición. */
+  const cruz=el('line',{y1:PAD.t,y2:PAD.t+IH,class:'cross'});s.appendChild(cruz);
+  const capas=el('g');s.appendChild(capas);
+
   series.forEach((se,si)=>{
-    const col=se.color||PAL[si%PAL.length];
+    const c=col(se,si);
     const pts=se.datos.map((v,i)=>v==null?null:[px(i),esc.y(v)]).filter(Boolean);
     if(pts.length>1){
       if(series.length===1){
         const g=el('linearGradient',{id:'gr'+si,x1:0,y1:0,x2:0,y2:1});
-        g.appendChild(el('stop',{offset:'0%','stop-color':col,'stop-opacity':.28}));
-        g.appendChild(el('stop',{offset:'100%','stop-color':col,'stop-opacity':0}));
-        const d=el('defs');d.appendChild(g);s.appendChild(d);
-        s.appendChild(el('path',{d:`M${pts.map(p=>p.join(' ')).join('L')}L${pts.at(-1)[0]} ${esc.y(Math.max(0,esc.lo))}L${pts[0][0]} ${esc.y(Math.max(0,esc.lo))}Z`,fill:`url(#gr${si})`}));
+        g.appendChild(el('stop',{offset:'0%','stop-color':c,'stop-opacity':.10}));
+        g.appendChild(el('stop',{offset:'100%','stop-color':c,'stop-opacity':0}));
+        const d=el('defs');d.appendChild(g);capas.appendChild(d);
+        const base=esc.y(Math.max(0,esc.lo));
+        capas.appendChild(el('path',{d:`M${pts.map(q=>q.join(' ')).join('L')}L${pts.at(-1)[0]} ${base}L${pts[0][0]} ${base}Z`,fill:`url(#gr${si})`}));
       }
-      s.appendChild(el('path',{d:`M${pts.map(p=>p.join(' ')).join('L')}`,fill:'none',stroke:col,'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
+      capas.appendChild(el('path',{d:`M${pts.map(q=>q.join(' ')).join('L')}`,fill:'none',stroke:c,
+        'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
     }
+    if(pts.length===1) // una sola lectura: sin línea que dibujar, el punto es el dato
+      capas.appendChild(el('circle',{cx:pts[0][0],cy:pts[0][1],r:4,fill:c,stroke:SUP,'stroke-width':2}));
+  });
+
+  /* Marcadores de 8px con anillo de 2px de la superficie, sólo cuando no se
+     amontonan; si hay muchos puntos el marcador tapa la línea. */
+  const marcar=rot.length<=16;
+  series.forEach((se,si)=>{
+    if(!marcar)return;const c=col(se,si);
     se.datos.forEach((v,i)=>{if(v==null)return;
-      const c=el('circle',{cx:px(i),cy:esc.y(v),r:series.length>1?2.6:3,fill:col,class:'dot'});
-      const hit=el('circle',{cx:px(i),cy:esc.y(v),r:13,fill:'transparent'});
-      conTip(hit,`<span class="tt">${esc2(se.rot?.[i]??rot[i])}</span>`+
-        series.map((s2,j)=>s2.datos[i]==null?'':`<div class="tr"><span style="color:${s2.color||PAL[j%PAL.length]}">${esc2(s2.t)}</span><b>${fmTip(s2.datos[i])}</b></div>`).join(''));
-      s.appendChild(c);s.appendChild(hit)});
+      capas.appendChild(el('circle',{cx:px(i),cy:esc.y(v),r:4,fill:c,stroke:SUP,'stroke-width':2,class:'dot'}))});
+  });
+
+  /* Banda de impacto por posición: al menos 24px de ancho, toda la altura. */
+  const ancho=Math.max(HIT,IW/Math.max(rot.length,1));
+  rot.forEach((r,i)=>{
+    const x=px(i);
+    const h=el('rect',{x:x-ancho/2,y:PAD.t,width:ancho,height:IH,fill:'transparent',class:'hit',
+      role:'img','aria-label':`${r}: `+series.map(se=>`${se.t} ${fmTip(se.datos[i])}`).join(', ')});
+    conTip(h,()=>cajaTip(series[0]?.rot?.[i]??r,
+        series.map((s2,j)=>s2.datos[i]==null?null:filaTip(col(s2,j),s2.t,fmTip(s2.datos[i]))).filter(Boolean)),
+      ()=>{cruz.setAttribute('x1',x);cruz.setAttribute('x2',x);cruz.classList.add('on')},
+      ()=>cruz.classList.remove('on'));
+    s.appendChild(h);
   });
   host.appendChild(s);
 }
-const esc2=s=>esc(s==null?'':s);
+
+/* Extremo de dato redondeado, base cuadrada. `y0` es la línea de base. */
+function senda(x,w,y0,y,r=RADIO){
+  const arriba=y<=y0, alto=Math.max(1,Math.abs(y0-y));
+  y=arriba?y0-alto:y0+alto;
+  r=Math.min(r,w/2,alto);
+  return arriba
+    ? `M${x} ${y0}L${x} ${y+r}Q${x} ${y} ${x+r} ${y}L${x+w-r} ${y}Q${x+w} ${y} ${x+w} ${y+r}L${x+w} ${y0}Z`
+    : `M${x} ${y0}L${x} ${y-r}Q${x} ${y} ${x+r} ${y}L${x+w-r} ${y}Q${x+w} ${y} ${x+w} ${y-r}L${x+w} ${y0}Z`;
+}
 function barras(host,series,rot,fmTip,marcas=[]){
   host.innerHTML='';const s=svg();
-  const esc_=escalaY(series.flatMap(x=>x.datos));
-  ejes(s,esc_,rot,v=>compact(v));
+  const esc=escalaY(series.flatMap(x=>x.datos));
+  ejes(s,esc,rot,v=>compact(v),IH,true);
   const n=rot.length,g=series.length;
-  const paso=IW/Math.max(n,1), ancho=Math.max(2,Math.min(46,paso*.72/g));
-  const y0=esc_.y(Math.max(0,esc_.lo));
+  const paso=IW/Math.max(n,1);
+  // 2px de hueco entre barras vecinas, y nunca más de 24px de grosor
+  const ancho=Math.max(2,Math.min(ANCHO_MAX,(paso*.74-HUECO*(g-1))/g));
+  const grupo=ancho*g+HUECO*(g-1);
+  const y0=esc.y(Math.max(0,esc.lo));
   rot.forEach((r,i)=>{
-    const cx=PAD.l+paso*i+paso/2;
+    const cx=posX(i,n,true);
+    const hit=el('rect',{x:cx-Math.max(HIT,paso)/2,y:PAD.t,width:Math.max(HIT,paso),height:IH,
+      fill:'transparent',class:'hit',role:'img',
+      'aria-label':`${r}: `+series.map(se=>`${se.t} ${fmTip(se.datos[i])}`).join(', ')});
+    const mias=[];
     series.forEach((se,j)=>{
       const v=se.datos[i];if(v==null)return;
-      const y=esc_.y(v),x=cx-(ancho*g)/2+ancho*j;
-      const col=se.color||PAL[j%PAL.length];
-      const b=el('rect',{x,y:Math.min(y,y0),width:ancho-1.5,height:Math.max(1,Math.abs(y0-y)),
-        fill:col,rx:2.5,class:'bar',opacity:marcas[i]?.55:1});
-      if(marcas[i])b.setAttribute('stroke-dasharray','3 2'),b.setAttribute('stroke',col);
-      conTip(b,`<span class="tt">${esc2(r)}${marcas[i]?' · parcial':''}</span>`+
-        series.map((s2,k)=>s2.datos[i]==null?'':`<div class="tr"><span style="color:${s2.color||PAL[k%PAL.length]}">${esc2(s2.t)}</span><b>${fmTip(s2.datos[i])}</b></div>`).join(''));
-      s.appendChild(b)});
+      const x=cx-grupo/2+(ancho+HUECO)*j, c=col(se,j);
+      const b=el('path',{d:senda(x,ancho,y0,esc.y(v)),fill:c,class:'bar',
+        opacity:marcas[i]?.6:1});
+      if(marcas[i])b.setAttribute('stroke-dasharray','3 2'),b.setAttribute('stroke',c);
+      mias.push(b);s.appendChild(b);
+    });
+    conTip(hit,()=>cajaTip(r+(marcas[i]?' · parcial':''),
+        series.map((s2,k)=>s2.datos[i]==null?null:filaTip(col(s2,k),s2.t,fmTip(s2.datos[i]))).filter(Boolean)),
+      ()=>mias.forEach(b=>b.classList.add('on')),
+      ()=>mias.forEach(b=>b.classList.remove('on')));
+    s.appendChild(hit);
   });
   host.appendChild(s);
 }
+/* Una sola serie no lleva leyenda: el título ya dice qué se está mirando. */
 function leyenda(host,series,cuadro){
-  host.innerHTML=series.map((s,i)=>
-    `<span><i class="${cuadro?'sq':''}" style="background:${s.color||PAL[i%PAL.length]}"></i>${esc(s.t)}</span>`).join('');
+  if(series.length<2){host.innerHTML='';return}
+  host.replaceChildren(...series.map((se,i)=>{
+    const sp=document.createElement('span');
+    const ic=document.createElement('i');
+    if(cuadro)ic.className='sq';
+    ic.style.background=col(se,i);
+    sp.append(ic,document.createTextNode(se.t));return sp}));
 }
+/* Volumen vs. eficiencia. Aquí la identidad la lleva la etiqueta sobre cada
+   burbuja, no el color: con ocho categorías y todos los pares en juego ningún
+   orden de hues separa bien, así que el color no codifica nada. */
 function dispersion(host,pts){
-  host.innerHTML='';const h=250,s=svg(h),ih=h-PAD.t-PAD.b;
-  const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
-  const xhi=Math.max(...xs)*1.12||1, yhi=Math.max(...ys)*1.12||1;
+  host.innerHTML='';const h=270,s=svg(h),ih=h-PAD.t-PAD.b;
+  const px=pasoLindo(Math.max(...pts.map(p=>p.x),1)/4), py=pasoLindo(Math.max(...pts.map(p=>p.y),1)/4);
+  const xhi=Math.ceil(Math.max(...pts.map(p=>p.x),1)/px+.35)*px;
+  const yhi=Math.ceil(Math.max(...pts.map(p=>p.y),1)/py+.35)*py;
   const X=v=>PAD.l+v/xhi*IW, Y=v=>PAD.t+ih-v/yhi*ih;
-  for(let i=0;i<=4;i++){const y=PAD.t+ih*i/4;
-    s.appendChild(el('line',{x1:PAD.l,x2:W-PAD.r,y1:y,y2:y,class:'gl',opacity:i===4?1:.5}));
-    const t=el('text',{x:PAD.l-7,y:y+3.5,class:'axl','text-anchor':'end'});
-    t.textContent=fmt(yhi*(1-i/4),1);s.appendChild(t)}
-  for(let i=0;i<=4;i++){const x=PAD.l+IW*i/4;
-    const t=el('text',{x,y:PAD.t+ih+17,class:'axl','text-anchor':'middle'});
-    t.textContent=compact(xhi*i/4);s.appendChild(t)}
+  for(let v=0;v<=yhi+py*1e-9;v+=py){const y=Y(v);
+    s.appendChild(el('line',{x1:PAD.l,x2:W-PAD.r,y1:y,y2:y,class:'gl'+(v?'':' base')}));
+    const t=el('text',{x:PAD.l-8,y:y+3.5,class:'axl','text-anchor':'end'});
+    t.textContent=fmt(v,1)+' %';s.appendChild(t)}
+  for(let v=0;v<=xhi+px*1e-9;v+=px){
+    const t=el('text',{x:X(v),y:PAD.t+ih+18,class:'axl','text-anchor':'middle'});
+    t.textContent=compact(v);s.appendChild(t)}
   const rmax=Math.max(...pts.map(p=>p.n))||1;
-  pts.forEach((p,i)=>{
-    const r=7+Math.sqrt(p.n/rmax)*17,col=PAL[i%PAL.length];
-    const c=el('circle',{cx:X(p.x),cy:Y(p.y),r,fill:col,'fill-opacity':.24,stroke:col,'stroke-width':1.5});
-    conTip(c,`<span class="tt">${esc(p.t)}</span>`+
-      `<div class="tr"><span>Vistas por video</span><b>${compact(p.x)}</b></div>`+
-      `<div class="tr"><span>CTR</span><b>${fmt(p.y,2)} %</b></div>`+
-      `<div class="tr"><span>Videos</span><b>${p.n}</b></div>`+
-      `<div class="tr"><span>Vistas totales</span><b>${compact(p.tot)}</b></div>`);
-    s.appendChild(c);
-    const t=el('text',{x:X(p.x),y:Y(p.y)+3.5,class:'axl','text-anchor':'middle',fill:'var(--ink)'});
-    t.textContent=p.t.slice(0,2).toUpperCase();s.appendChild(t)});
+  const AZUL=PAL[0];
+  /* Etiqueta directa cuando entra sin pisar a otra: se prueban cuatro
+     posiciones y, si ninguna queda libre, la categoría se lee en el tooltip y
+     en la tabla. Amontonar rótulos es peor que no ponerlos. */
+  const choca=(a,b)=>!(a.x2<b.x1||b.x2<a.x1||a.y2<b.y1||b.y2<a.y1);
+  const radio=p=>8+Math.sqrt(p.n/rmax)*16;
+  const cajas=pts.map(p=>{const r=radio(p),cx=X(p.x),cy=Y(p.y);
+    return{x1:cx-r,x2:cx+r,y1:cy-r,y2:cy+r}});
+  const rotular=(cx,cy,r,txt)=>{
+    const an=txt.length*5.6+6, al=14;
+    for(const [dx,dy,anc] of [[0,-r-9,'middle'],[0,r+15,'middle'],
+                              [r+7,4,'start'],[-r-7,4,'end']]){
+      const x=cx+dx,y=cy+dy;
+      const x1=anc==='middle'?x-an/2:anc==='start'?x:x-an;
+      const c={x1,x2:x1+an,y1:y-al,y2:y+4};
+      if(c.x1<PAD.l-6||c.x2>W-PAD.r+6||c.y1<PAD.t-4||c.y2>PAD.t+ih+4)continue;
+      if(cajas.some(o=>choca(c,o)))continue;
+      cajas.push(c);
+      const t=el('text',{x,y,class:'dlab','text-anchor':anc});t.textContent=txt;return t;
+    }
+    return null;
+  };
+  // los lotes grandes eligen lugar primero
+  [...pts].sort((a,b)=>b.n-a.n).forEach(p=>{
+    const r=radio(p), cx=X(p.x), cy=Y(p.y);
+    s.appendChild(el('circle',{cx,cy,r,fill:AZUL,'fill-opacity':.22,stroke:AZUL,'stroke-width':2}));
+    const t=rotular(cx,cy,r,p.t);if(t)s.appendChild(t);
+    const hit=el('circle',{cx,cy,r:Math.max(HIT/2,r),fill:'transparent',class:'hit',
+      role:'img','aria-label':`${p.t}: ${compact(p.x)} vistas por video, CTR ${fmt(p.y,2)} %, ${p.n} videos`});
+    conTip(hit,()=>cajaTip(p.t,[
+      filaTip(AZUL,'Vistas por video',compact(p.x)),
+      filaTip(AZUL,'CTR',fmt(p.y,2)+' %'),
+      filaTip(AZUL,'Videos',String(p.n)),
+      filaTip(AZUL,'Vistas totales',compact(p.tot))]));
+    s.appendChild(hit);
+  });
+  host.appendChild(s);
+}
+
+/* Sparkline de la cifra principal: la serie en un tono apagado y el período
+   más reciente en el acento, para ubicar el número en su recorrido. */
+function spark(host,datos,color){
+  host.innerHTML='';
+  const fin=datos.map(v=>v==null||!isFinite(v)?null:v);
+  const hay=fin.filter(v=>v!=null);
+  if(hay.length<2)return;
+  const w=164,h=46,lo=Math.min(...hay),hi=Math.max(...hay),ext=hi-lo||1;
+  const s=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  s.setAttribute('viewBox',`0 0 ${w} ${h}`);s.setAttribute('class','spark');
+  s.setAttribute('aria-hidden','true');
+  const px=i=>4+i*(w-8)/Math.max(fin.length-1,1), py=v=>h-4-(v-lo)/ext*(h-10);
+  const pts=fin.map((v,i)=>v==null?null:[px(i),py(v)]).filter(Boolean);
+  s.appendChild(el('path',{d:`M${pts.map(q=>q.join(' ')).join('L')}`,fill:'none',
+    stroke:'var(--muted)','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round'}));
+  const u=pts.at(-1);
+  if(pts.length>1)s.appendChild(el('path',{d:`M${pts.at(-2).join(' ')}L${u.join(' ')}`,
+    fill:'none',stroke:color,'stroke-width':2,'stroke-linecap':'round'}));
+  s.appendChild(el('circle',{cx:u[0],cy:u[1],r:4,fill:color,stroke:SUP,'stroke-width':2}));
   host.appendChild(s);
 }
 
@@ -676,8 +912,16 @@ function render(){
   $('lab-off').classList.toggle('on',S.modo==='A');
   $('lab-on').classList.toggle('on',S.modo==='B');
 
+  /* cifra principal: la métrica que maneja el gráfico, en grande */
+  $('hero-l').textContent=m.t;
+  $('hero-v').textContent=m.f(tot[m.k]);
+  $('hero-u').textContent=UNIV()+(S.modo==='A'?` · ${tot.n} videos`:` · ${filas.length} períodos`);
+  $('hero-d').innerHTML=tarjetaDelta(m,tot,base)||'<span class="d flat">sin base comparable</span>';
+  spark($('hero-spark'),filas.map(r=>r[m.k]),acentoDe());
+
   /* KPIs */
-  $('kpis').innerHTML=METRICAS[S.modo].filter(k=>!(k.req==='subs'&&!TIENE_SUBS_DESGLOSE))
+  $('kpis').innerHTML=METRICAS[S.modo]
+    .filter(k=>k.k!==m.k&&!(k.req==='subs'&&!TIENE_SUBS_DESGLOSE))
     .map(k=>tarjeta(k,tot,base)).join('');
 
   /* evolución */
@@ -686,26 +930,26 @@ function render(){
     (marcas.some(Boolean)?'. Las barras punteadas son períodos incompletos.':'.');
   if(S.tipo==='overlay') overlay($('c-evo'),m);
   else{
-    const serie1=[{t:m.t,datos:filas.map(r=>r[m.k]),color:S.modo==='A'?'#c07cff':'#4d8dff'}];
+    const serie1=[{t:m.t,datos:filas.map(r=>r[m.k]),color:acentoDe()}];
     (S.tipo==='barra'?barras:linea)($('c-evo'),serie1,rot,m.f,marcas);
     leyenda($('evo-leg'),serie1,S.tipo==='barra');
   }
 
   /* subs y ctr */
   if(S.modo==='B'&&TIENE_SUBS_DESGLOSE){
-    const ss=[{t:'Ganados',datos:filas.map(r=>r.sg),color:'#3ddc97'},
-              {t:'Perdidos',datos:filas.map(r=>r.sp==null?null:-r.sp),color:'#ff5d6c'},
-              {t:'Neto',datos:filas.map(r=>r.sn),color:'#4d8dff'}];
+    const ss=[{t:'Ganados',datos:filas.map(r=>r.sg),color:PAL[2]},
+              {t:'Perdidos',datos:filas.map(r=>r.sp==null?null:-r.sp),color:PAL[7]},
+              {t:'Neto',datos:filas.map(r=>r.sn),color:PAL[0]}];
     barras($('c-subs'),ss,rot,x=>fmt(Math.abs(x),0),marcas);
     leyenda($('subs-leg'),ss,true);$('subs-note').textContent='ganados, perdidos y neto';
   }else{
-    const ss=[{t:'Subs netos',datos:filas.map(r=>S.modo==='A'?r.sg:r.sn),color:S.modo==='A'?'#c07cff':'#4d8dff'}];
+    const ss=[{t:'Subs netos',datos:filas.map(r=>S.modo==='A'?r.sg:r.sn),color:acentoDe()}];
     barras($('c-subs'),ss,rot,x=>fmt(x,0),marcas);
     leyenda($('subs-leg'),ss,true);
     $('subs-note').textContent=S.modo==='A'?'ganados por los videos del período'
       :'sólo el neto: los CSV del canal no traen el desglose';
   }
-  linea($('c-ctr'),[{t:'CTR',datos:filas.map(r=>r.ctr),color:'#f5b84b'}],rot,x=>fmt(x,2)+' %');
+  linea($('c-ctr'),[{t:'CTR',datos:filas.map(r=>r.ctr),color:PAL[3]}],rot,x=>fmt(x,2)+' %');
 
   /* comparación de períodos */
   comparacion(filas,m);
@@ -726,24 +970,31 @@ function render(){
   avisos(filas,tot);
 }
 
+function tarjetaDelta(k,tot,cmp){
+  const base=baseUsable(cmp);
+  return base?d(k,tot[k.k],base[k.k]):'';
+}
+/* El CTR varía en puntos porcentuales, no en porcentaje sobre el porcentaje.
+   En "subs perdidos" la baja es buena, así que el color se invierte. */
+function d(k,cur,prev){
+  if(prev==null||cur==null||!isFinite(prev)||!prev)return'';
+  const p=k.k==='ctr'?cur-prev:(cur/prev-1)*100;
+  const uni=k.k==='ctr'?' pp':' %';
+  const cls=Math.abs(p)<0.05?'flat':p>0?'up':'dn';
+  const inv=k.k==='sp';
+  return `<span class="d ${inv?(cls==='up'?'dn':cls==='dn'?'up':cls):cls}">${p>0?'▲':p<0?'▼':'■'} ${fmt(Math.abs(p),1)}${uni}</span>`;
+}
 function tarjeta(k,tot,cmp){
   const base=baseUsable(cmp);
   const v=tot[k.k];
-  const d=(cur,prev)=>{
-    if(prev==null||cur==null||!isFinite(prev)||!prev)return'';
-    const p=k.tipo==='ratio'&&(k.k==='ctr')?cur-prev:(cur/prev-1)*100;
-    const uni=k.tipo==='ratio'&&k.k==='ctr'?' pp':' %';
-    const cls=Math.abs(p)<0.05?'flat':p>0?'up':'dn';
-    const inv=k.k==='sp';
-    return `<span class="d ${inv?(cls==='up'?'dn':cls==='dn'?'up':cls):cls}">${p>0?'▲':p<0?'▼':'■'} ${fmt(Math.abs(p),1)}${uni}</span>`};
   const lbl=S.comp==='none'?'Comparación desactivada'
     :base?(S.comp==='yoy'?'vs. mismo período del año anterior':'vs. período anterior')
-    :cmp?.incompleta?`Sin base comparable: faltan ${cmp.faltan} de ${cmp.total} períodos en los datos`
+    :cmp?.incompleta?'Sin base comparable'
     :S.comp==='yoy'?'No hay año anterior en la base':'No hay período anterior en la base';
   return `<div class="kpi"><div class="k-t">${esc(k.t)}</div>
     <div class="k-u">${esc(UNIV())}</div>
     <div class="k-v">${k.f(v)}</div>
-    <div class="deltas">${base?d(v,base[k.k])||'<span class="d flat">sin base</span>':''}</div>
+    <div class="deltas">${base?d(k,v,base[k.k])||'<span class="d flat">sin base</span>':''}</div>
     <div class="k-f">${esc(lbl)}${S.modo==='A'&&k.k!=='n'?` · ${tot.n} videos`:''}</div></div>`;
 }
 
@@ -772,7 +1023,7 @@ function overlay(host,m){
     }
   }
   const series=[...porAnio.entries()].sort().map(([y,celdas],i)=>
-    ({t:y,datos:celdas.map(o=>o?cerrar(o)[m.k]:null),color:PAL[i%PAL.length]}));
+    ({t:y,datos:celdas.map(o=>o?cerrar(o)[m.k]:null),color:colAnio(y)}));
   linea(host,series,MES,m.f);
   leyenda($('evo-leg'),series);
 }
@@ -780,27 +1031,27 @@ function comparacion(filas,m){
   const n=filas.length;
   $('comp-sub').textContent=n<2?'Seleccioná al menos dos períodos para comparar.'
     :`${n} períodos, métrica: ${m.t.toLowerCase()}. El número de videos se muestra siempre, para no confundir "publicamos más" con "cada video rindió mejor".`;
-  const serieV=[{t:m.t,datos:filas.map(r=>r[m.k]),color:S.modo==='A'?'#c07cff':'#4d8dff'}];
-  const extra=S.modo==='A'?[{t:'Videos publicados',datos:filas.map(r=>r.n),color:'#6f7a93'}]:[];
+  const serieV=[{t:m.t,datos:filas.map(r=>r[m.k]),color:acentoDe()}];
+  const extra=S.modo==='A'?[{t:'Videos publicados',datos:filas.map(r=>r.n),color:'#75809a'}]:[];
   barras($('c-comp'),serieV,filas.map(r=>rotulo(r.k)),m.f,filas.map(r=>r.parcial));
   leyenda($('comp-leg'),serieV.concat(extra.length&&m.k!=='n'?[{t:'(pasá el cursor para ver el nº de videos)',color:'transparent'}]:[]),true);
 }
 function compartir(host,cats){
   const tot=cats.reduce((a,c)=>a+c.vistas,0)||1;
-  host.innerHTML=cats.map((c,i)=>{
+  host.innerHTML=cats.map(c=>{
     const p=c.vistas/tot*100;
-    return `<div style="margin-bottom:9px">
-      <div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:4px">
-        <span>${esc(catL(c.cat))} ${c.chico?'<span class="tag warn">n&lt;8</span>':''}</span>
-        <span class="mini"><b style="color:var(--ink)">${fmt(p,1)} %</b> · ${compact(c.vistas)} · ${c.n} v.</span></div>
-      <div class="sbar" style="width:${Math.max(p,.7)}%;background:${PAL[i%PAL.length]}"></div></div>`}).join('');
+    return `<div style="margin-bottom:11px">
+      <div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:5px">
+        <span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:7px;background:${catC(c.cat)}"></i>${esc(catL(c.cat))} ${c.chico?'<span class="tag warn">n&lt;8</span>':''}</span>
+        <span class="mini"><b style="color:var(--ink);font-variant-numeric:tabular-nums">${fmt(p,1)} %</b> · ${compact(c.vistas)} · ${c.n} v.</span></div>
+      <div class="sbar-t"><div class="sbar" style="width:${Math.max(p,.7)}%;background:${catC(c.cat)}"></div></div></div>`}).join('');
 }
 
 /* ── 7. tablas y exportación ─────────────────────────────── */
 const COLS_CAT=[['cat','Categoría','l'],['n','Videos'],['vistas','Vistas'],['vpv','Vistas/video'],
   ['ctr','CTR'],['pctRepr','% repr.'],['s1k','Subs/1k'],['share','% del total']];
 function tablaCats(cats){
-  const celda=(c,k)=>k==='cat'?`<td class="l">${esc(catL(c.cat))} ${c.chico?'<span class="tag warn">muestra chica</span>':''}</td>`
+  const celda=(c,k)=>k==='cat'?`<td class="l"><i style="display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;background:${catC(c.cat)}"></i>${esc(catL(c.cat))} ${c.chico?'<span class="tag warn">muestra chica</span>':''}</td>`
     :`<td class="num">${k==='ctr'||k==='share'||k==='pctRepr'?(c[k]==null?'—':fmt(c[k],k==='share'?1:2)+' %')
       :k==='s1k'?fmt(c[k],2):k==='n'?c[k]:compact(c[k])}</td>`;
   $('t-cats').innerHTML=`<thead><tr>${COLS_CAT.map(([k,t,cl])=>
@@ -877,8 +1128,15 @@ function avisos(filas,tot){
     `<b>Subs sólo en neto.</b> Los CSV del canal cargados no traen el desglose ganados / perdidos mes a mes. El neto sí es correcto.`]);
   if(S.modo==='B') out.push(['info','i',
     `<b>Con el switch en ON las categorías no siguen el filtro temporal.</b> Para repartir entre categorías las vistas de un período haría falta saber qué video generó cada vista cada día, y el export por video trae acumulados sin fecha. La sección 04 muestra los ${fmt(VIDEOS.length,0)} videos de la ventana con su acumulado, que no cubre las vistas que sigue trayendo el catálogo anterior a ${VENTANA_INI}: leé los porcentajes como reparto entre categorías, no como parte de las vistas del período. Poné el switch en OFF y las categorías sí se recortan, por fecha de publicación.`]);
-  $('avisos').innerHTML=out.map(([c,ic,t])=>
-    `<div class="note ${c}"><span class="ic">${ic}</span><div>${t}</div></div>`).join('');
+  const nota=([c,ic,t])=>`<div class="note ${c}"><span class="ic">${ic}</span><div>${t}</div></div>`;
+  const warn=out.filter(o=>o[0]==='warn'), info=out.filter(o=>o[0]==='info');
+  $('avisos').innerHTML=warn.map(nota).join('')+(info.length?
+    `<details class="plegable"${S.notasAbiertas?' open':''}>
+       <summary>${info.length} nota${info.length>1?'s':''} sobre cómo se calculan estos números</summary>
+       ${info.map(nota).join('')}
+     </details>`:'');
+  const det=$('avisos').querySelector('details');
+  if(det)det.ontoggle=()=>S.notasAbiertas=det.open;   // no se cierra en cada render
 }
 const METODO=[
  '<b>Switch OFF — videos publicados en el período.</b> Se filtra por fecha de publicación y se cuenta el acumulado completo de esos videos, desde que salieron hasta el corte. Un video de enero 2025 con 300.000 vistas aporta las 300.000, aunque la mayoría las haya juntado en marzo.',
