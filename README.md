@@ -7,17 +7,37 @@ Dos páginas estáticas, sin servidor ni build. Se abren con doble clic.
 | `dashboard.html` | **Dashboard interactivo.** Filtros por año, quarter y mes, comparación de períodos, modos A/B, performance por categoría, exportación a CSV. |
 | `index.html` | Reporte fijo del último mes cerrado. Una foto, sin controles. |
 
-## Los dos modos de análisis
+## El switch: dos universos de análisis
 
 El dashboard nunca mezcla estas dos preguntas en un mismo indicador. El panel
-cambia de color según el modo activo (violeta / azul) y el modo va siempre en
-la barra superior.
+cambia de color (violeta / azul), el título de cada KPI dice de qué universo
+sale el número y el estado del switch va en la barra superior.
 
-**Modo A · contenido publicado.** Sólo los videos con fecha de publicación
-dentro del período. Responde *¿qué tan bien funcionó lo que publicamos?*
+Con **enero 2025** seleccionado:
 
-**Modo B · performance del canal.** Todo lo que ocurrió en el período, sin
-importar cuándo se publicó el video. Responde *¿cuánto generó el canal?*
+| | Switch OFF | Switch ON |
+|---|---|---|
+| Filtra por | Fecha de **publicación** | Fecha en que se **generó la métrica** |
+| Incluye | Solo videos publicados en enero 2025 | Todos los videos, sin importar cuándo salieron |
+| Mide | Su acumulado **completo**, hasta el corte | Solo lo ocurrido **dentro** de enero 2025 |
+| Título del KPI | "Vistas acumuladas — Videos publicados en enero 2025" | "Vistas generadas — Todo el canal durante enero 2025" |
+| Responde | ¿Cuánto terminó generando lo que publicamos? | ¿Cuánto generó el canal? |
+
+Un video publicado en enero 2025 con 300.000 vistas aporta las 300.000 en OFF,
+aunque la mayoría las haya juntado en marzo. En ON aporta solo las vistas que
+hizo durante enero.
+
+El switch gobierna vistas, CTR, suscriptores y performance por categoría.
+
+**Antigüedad media del lote.** Como OFF suma acumulados, un lote viejo tuvo más
+tiempo para juntar vistas que uno reciente. No es un error de cálculo: es la
+definición. Pero para que dos períodos sean comparables, la antigüedad media
+del lote aparece como KPI y como columna de la tabla, y el panel avisa cuando
+los lotes en pantalla difieren demasiado.
+
+**Comparaciones contra huecos.** Si el período de referencia cae fuera de los
+datos disponibles, la variación no se muestra: se dice cuántos períodos faltan.
+Un −93 % contra un hueco es peor que no mostrar nada.
 
 ## Actualizar con data nueva
 

@@ -64,6 +64,25 @@ select,input[type=date]{font:500 12.5px var(--body);color:var(--ink);background:
 select:focus-visible,input:focus-visible,.tg:focus-visible,.seg button:focus-visible{outline:2px solid var(--mode);outline-offset:1px}
 .link{background:none;border:0;color:var(--mode);font:500 11.5px var(--body);cursor:pointer;padding:0;text-decoration:underline}
 
+/* ── switch de universo ─────────────────────────────────── */
+.swbox{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--panel2);
+  border:1px solid var(--line2);border-radius:12px;padding:12px 16px}
+.swlab{font:600 13.5px var(--body);color:var(--muted);display:flex;flex-direction:column;gap:2px;
+  max-width:30ch;transition:color .2s;cursor:default}
+.swlab small{font:500 11px var(--mono);color:var(--muted);opacity:.75;font-weight:400}
+.swlab.on{color:var(--ink)}
+.swlab.on small{color:var(--mode);opacity:1}
+.sw{flex:none;width:62px;height:32px;border-radius:99px;border:1px solid var(--line2);
+  background:var(--modoA);padding:0;position:relative;cursor:pointer;transition:background .25s}
+.sw[aria-checked="true"]{background:var(--modoB)}
+.sw .knob{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
+  background:#07090f;transition:transform .25s cubic-bezier(.4,1.6,.5,1)}
+.sw[aria-checked="true"] .knob{transform:translateX(30px)}
+.sw:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.swexp{margin:9px 0 0;font-size:12.5px;color:var(--ink2)}
+.swexp b{color:var(--ink)}
+.kpi .k-u{font-size:11.5px;color:var(--mode);margin-top:3px;line-height:1.35}
+
 /* ── avisos ─────────────────────────────────────────────── */
 .note{display:flex;gap:11px;border-radius:11px;padding:12px 14px;margin-top:14px;font-size:13px;line-height:1.5}
 .note .ic{flex:none;width:19px;height:19px;border-radius:5px;display:grid;place-items:center;
@@ -163,12 +182,13 @@ footer li{margin-bottom:6px;line-height:1.5}
   <!-- ── controles ── -->
   <div class="ctrl">
     <div class="ctrl-row">
-      <div class="fld">
-        <label id="l-modo">Modo de análisis</label>
-        <div class="seg modo" role="group" aria-labelledby="l-modo" id="s-modo">
-          <button data-v="B" aria-pressed="true">B · Performance del canal</button>
-          <button data-v="A" aria-pressed="false">A · Contenido publicado</button>
+      <div class="fld" style="flex:1 1 100%">
+        <div class="swbox">
+          <span class="swlab" id="lab-off">Videos publicados en el período<small>métricas acumuladas de esos videos</small></span>
+          <button class="sw" id="s-switch" role="switch" aria-checked="true" aria-labelledby="lab-off lab-on"><span class="knob"></span></button>
+          <span class="swlab" id="lab-on">Todo el canal durante el período<small>métricas generadas en esas fechas</small></span>
         </div>
+        <p class="swexp" id="swexp"></p>
       </div>
       <div class="fld">
         <label id="l-gran">Agrupar por</label>
@@ -299,6 +319,9 @@ const D=__DATA__;
 const $=i=>document.getElementById(i);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=(x,d=0)=>x==null||!isFinite(x)?'—':Number(x).toLocaleString('es-CL',{minimumFractionDigits:d,maximumFractionDigits:d});
+// Envuelve un formateador para que un valor ausente sea siempre un guion
+// limpio, sin la unidad pegada detras ('— %', 'US$ —').
+const nn=f=>x=>x==null||!isFinite(x)?'—':f(x);
 const compact=x=>x==null||!isFinite(x)?'—':Math.abs(x)>=1e6?fmt(x/1e6,1)+'M':Math.abs(x)>=1e3?fmt(x/1e3,0)+'k':fmt(x,0);
 const MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const MESL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -327,27 +350,37 @@ const ANIOS=[...new Set(MESES.map(m=>m.p.slice(0,4)))].sort();
 // con algunos sueltos cualquier suma del periodo sale incompleta.
 const TIENE_SUBS_DESGLOSE=MESES.length>0&&MESES.every(m=>m.sg!=null);
 const SERIE_VIDEO=!!D.meta.video_serie_temporal;
+const RANGO={min:MESES[0]?.p,max:MESES.at(-1)?.p};
+const RANGO_VID=(()=>{const ps=VIDEOS.map(v=>v.pub.slice(0,7)).sort();
+  return{min:ps[0],max:ps.at(-1)}})();
 
 /* ── 2. estado ───────────────────────────────────────────── */
 const S={modo:'B',gran:'mes',comp:'prev',metrica:'v',tipo:'linea',
   anios:new Set(ANIOS),quarters:new Set([1,2,3,4]),meses:new Set([1,2,3,4,5,6,7,8,9,10,11,12]),
   ordCat:{k:'vistas',dir:-1},ordDatos:{k:'p',dir:1}};
 
+/* Los rotulos dicen de que universo sale cada numero: en OFF todo es
+   "acumulado" (lo que junto el video desde que se publico), en ON todo es
+   "generado" (lo que ocurrio dentro de las fechas elegidas). */
 const METRICAS={
-  B:[{k:'v',t:'Vistas',f:compact,tipo:'suma'},
-     {k:'i',t:'Impresiones',f:compact,tipo:'suma'},
-     {k:'ctr',t:'CTR',f:x=>fmt(x,2)+' %',tipo:'ratio'},
-     {k:'sn',t:'Subs netos',f:x=>fmt(x,0),tipo:'suma'},
-     {k:'sg',t:'Subs ganados',f:x=>fmt(x,0),tipo:'suma',req:'subs'},
-     {k:'sp',t:'Subs perdidos',f:x=>fmt(x,0),tipo:'suma',req:'subs'},
-     {k:'ing',t:'Ingresos (USD)',f:x=>'US$ '+fmt(x,0),tipo:'suma'},
-     {k:'rpm',t:'RPM (USD)',f:x=>'US$ '+fmt(x,2),tipo:'ratio'}],
+  B:[{k:'v',t:'Vistas generadas',f:compact,tipo:'suma'},
+     {k:'i',t:'Impresiones generadas',f:compact,tipo:'suma'},
+     {k:'ctr',t:'CTR del período',f:nn(x=>fmt(x,2)+' %'),tipo:'ratio'},
+     {k:'sn',t:'Subs netos del período',f:x=>fmt(x,0),tipo:'suma'},
+     {k:'sg',t:'Subs ganados en el período',f:x=>fmt(x,0),tipo:'suma',req:'subs'},
+     {k:'sp',t:'Subs perdidos en el período',f:x=>fmt(x,0),tipo:'suma',req:'subs'},
+     {k:'ing',t:'Ingresos del período (USD)',f:nn(x=>'US$ '+fmt(x,0)),tipo:'suma'},
+     {k:'rpm',t:'RPM del período (USD)',f:nn(x=>'US$ '+fmt(x,2)),tipo:'ratio'}],
   A:[{k:'n',t:'Videos publicados',f:x=>fmt(x,0),tipo:'suma'},
      {k:'v',t:'Vistas acumuladas',f:compact,tipo:'suma'},
-     {k:'vpv',t:'Vistas por video',f:compact,tipo:'ratio'},
-     {k:'ctr',t:'CTR',f:x=>fmt(x,2)+' %',tipo:'ratio'},
-     {k:'sg',t:'Subs ganados',f:x=>fmt(x,0),tipo:'suma'},
-     {k:'s1k',t:'Subs / 1k vistas',f:x=>fmt(x,2),tipo:'ratio'}]};
+     {k:'vpv',t:'Vistas acumuladas por video',f:compact,tipo:'ratio'},
+     {k:'ctr',t:'CTR acumulado',f:nn(x=>fmt(x,2)+' %'),tipo:'ratio'},
+     {k:'sg',t:'Subs ganados acumulados',f:x=>fmt(x,0),tipo:'suma'},
+     {k:'s1k',t:'Subs / 1k vistas',f:nn(x=>fmt(x,2)),tipo:'ratio'},
+     {k:'edad',t:'Antigüedad media del lote',f:nn(x=>fmt(x,0)+' días'),tipo:'ratio'}]};
+const UNIV=()=>S.modo==='A'
+  ? `Videos publicados en ${describir()}`
+  : `Todo el canal durante ${describir()}`;
 const met=()=>METRICAS[S.modo].find(m=>m.k===S.metrica)||METRICAS[S.modo][0];
 
 /* ── 3. agregación ───────────────────────────────────────── */
@@ -359,11 +392,14 @@ const rotulo=k=>S.gran==='anio'?k:S.gran==='quarter'?k.replace('-',' ')
 const pasa=p=>{const y=p.slice(0,4),mm=+p.slice(5,7);
   return S.anios.has(y)&&S.quarters.has(qDe(mm))&&S.meses.has(mm)};
 
-function vacio(){return{v:0,i:0,c:0,sg:0,sp:0,sn:0,ing:0,n:0,meses:0,parcial:false,subsOk:true}}
+const CORTE=new Date(D.meta.corte+'T00:00:00Z');
+const diasDesde=pub=>Math.max(0,Math.round((CORTE-new Date(pub+'T00:00:00Z'))/864e5));
+function vacio(){return{v:0,i:0,c:0,sg:0,sp:0,sn:0,ing:0,n:0,meses:0,edadSum:0,parcial:false,subsOk:true}}
 function cerrar(o){
   o.ctr=o.i?o.c/o.i*100:null;
   o.rpm=o.v?o.ing/(o.v/1000):null;
   o.vpv=o.n?o.v/o.n:null;
+  o.edad=o.n?o.edadSum/o.n:null;
   o.s1k=o.v?o.sg/(o.v/1000)*1000/1000:null;
   if(o.v) o.s1k=o.sg/o.v*1000;
   if(!o.subsOk){o.sg=null;o.sp=null}
@@ -391,6 +427,7 @@ function serieA(){
     if(!pasa(p))continue;
     const k=clave(p),o=acc.get(k)||Object.assign(vacio(),{k,vids:[]});
     o.v+=vd.v||0;o.i+=vd.i||0;o.c+=vd.c||0;o.sg+=vd.sg||0;o.n++;o.vids.push(vd);
+    o.edadSum+=diasDesde(vd.pub);
     if(PARCIALES.has(p))o.parcial=true;
     acc.set(k,o);
   }
@@ -400,32 +437,55 @@ const serie=()=>S.modo==='A'?serieA():serieB();
 function total(rows){
   const o=vacio();
   for(const r of rows){o.v+=r.v;o.i+=r.i;o.c+=r.c;o.ing+=r.ing;o.sn+=r.sn;o.n+=r.n;o.meses+=r.meses;
+    o.edadSum+=r.edadSum||0;
     if(r.sg==null)o.subsOk=false;else{o.sg+=r.sg;o.sp+=r.sp}
     if(r.parcial)o.parcial=true}
   return cerrar(o);
 }
-/* base de comparación: mismo nº de períodos, corridos hacia atrás */
-function comparar(rows){
-  if(S.comp==='none'||!rows.length)return null;
-  const claves=new Set(rows.map(r=>r.k));
+/* Base de comparación: los mismos meses de calendario que están
+   seleccionados, corridos hacia atrás. El desplazamiento se calcula sobre los
+   meses SELECCIONADOS, no sobre los que tienen datos: si no, al elegir un
+   rango con meses vacíos la base se corre menos de lo que debería y la
+   variación sale contra el período equivocado. */
+function mesesSeleccionados(){
+  const out=[];
+  for(let y=+RANGO.min.slice(0,4);y<=+RANGO.max.slice(0,4);y++)
+    for(let mm=1;mm<=12;mm++){
+      const p=`${y}-${String(mm).padStart(2,'0')}`;
+      if(p>=RANGO.min&&p<=RANGO.max&&pasa(p))out.push(p);
+    }
+  return out;
+}
+function comparar(){
+  if(S.comp==='none')return null;
+  const sel=mesesSeleccionados();
+  if(!sel.length)return null;
+  const salto=S.comp==='yoy'?12:sel.length;
   const mover=p=>{const[y,mm]=p.split('-').map(Number);
-    if(S.comp==='yoy')return `${y-1}-${String(mm).padStart(2,'0')}`;
-    const d=new Date(Date.UTC(y,mm-1-rows.length*(S.gran==='anio'?12:S.gran==='quarter'?3:1),1));
+    const d=new Date(Date.UTC(y,mm-1-salto,1));
     return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`};
+  const objetivo=new Set(sel.map(mover));
+  const lim=S.modo==='A'?RANGO_VID:RANGO;
+  const fuera=[...objetivo].filter(p=>p<lim.min||p>lim.max);
+  if(fuera.length)return{incompleta:true,faltan:fuera.length,total:objetivo.size};
+
   const base=vacio();let hay=false;
-  const fuente=S.modo==='A'
-    ? VIDEOS.map(v=>({p:v.pub.slice(0,7),v:v.v,i:v.i,c:v.c,sg:v.sg,uno:1}))
-    : MESES.map(m=>({p:m.p,v:m.v,i:m.i,c:m.c,sg:m.sg,sp:m.sp,sn:m.sn,ing:m.ing,uno:0}));
-  const objetivo=new Set();
-  for(const r of rows) for(const p of (r.periodos||r.vids?.map(v=>v.pub.slice(0,7))||[])) objetivo.add(mover(p));
-  if(!objetivo.size) for(const k of claves) objetivo.add(mover(k+'-01'));
-  for(const f of fuente){
-    if(!objetivo.has(f.p))continue;
-    hay=true;base.v+=f.v||0;base.i+=f.i||0;base.c+=f.c||0;base.ing+=f.ing||0;base.sn+=f.sn||0;base.n+=f.uno;
-    if(f.sg==null)base.subsOk=false;else{base.sg+=f.sg;base.sp+=f.sp||0}
+  if(S.modo==='A'){
+    for(const v of VIDEOS){
+      if(!objetivo.has(v.pub.slice(0,7)))continue;
+      hay=true;base.v+=v.v||0;base.i+=v.i||0;base.c+=v.c||0;base.sg+=v.sg||0;base.n++;
+      base.edadSum+=diasDesde(v.pub);
+    }
+  }else{
+    for(const m of MESES){
+      if(!objetivo.has(m.p))continue;
+      hay=true;base.v+=m.v||0;base.i+=m.i||0;base.c+=m.c||0;base.ing+=m.ing||0;base.sn+=m.sn||0;
+      if(m.sg==null)base.subsOk=false;else{base.sg+=m.sg;base.sp+=m.sp||0}
+    }
   }
   return hay?cerrar(base):null;
 }
+const baseUsable=b=>b&&!b.incompleta?b:null;
 
 /* ── 4. gráficos (SVG a mano, sin dependencias) ──────────── */
 const W=760,H=230,PAD={t:14,r:14,b:26,l:46};
@@ -567,7 +627,7 @@ function porCategoria(){
 let ULT={filas:[],cats:[]};
 function render(){
   document.documentElement.setAttribute('data-modo',S.modo);
-  const filas=serie(), tot=total(filas), base=comparar(filas);
+  const filas=serie(), tot=total(filas), base=comparar();
   ULT.filas=filas;
   const rot=filas.map(r=>rotulo(r.k));
   const marcas=filas.map(r=>r.parcial);
@@ -577,16 +637,23 @@ function render(){
   const etiqueta=describir();
   $('topchips').innerHTML=[
     `Corte <b>${esc(D.meta.corte)}</b>`,
-    `<span class="chip on" style="border:0;padding:0">${S.modo==='A'?'Modo A · contenido publicado':'Modo B · canal completo'}</span>`,
+    `<span class="chip on" style="border:0;padding:0">${S.modo==='A'?'OFF · publicados en el período':'ON · todo el canal'}</span>`,
     `Período <b>${esc(etiqueta)}</b>`,
     S.modo==='A'?`<b>${tot.n}</b> videos`:`<b>${filas.length}</b> ${S.gran==='mes'?'meses':S.gran==='quarter'?'quarters':'años'}`,
   ].map(x=>`<span class="chip">${x}</span>`).join('');
-  $('hero-eyebrow').textContent=S.modo==='A'?'Modo A · performance del contenido publicado'
-    :'Modo B · performance total del canal';
-  $('kpi-h').textContent=S.modo==='A'?'Videos publicados en el período':'Resultados generados en el período';
+  $('hero-eyebrow').textContent=S.modo==='A'
+    ? 'Switch OFF · filtro por fecha de publicación'
+    : 'Switch ON · filtro por fecha en que se generó la métrica';
+  $('kpi-h').textContent=UNIV();
   $('kpi-sub').textContent=S.modo==='A'
-    ? 'Sólo videos con fecha de publicación dentro del período. Responde: ¿qué tan bien funcionó lo que publicamos?'
-    : 'Todo lo que ocurrió en el período, sin importar cuándo se publicó el video. Responde: ¿cuánto generó el canal?';
+    ? `Sólo los ${tot.n} videos publicados en ${describir()}, con todo lo que acumularon desde entonces hasta el corte. Responde: ¿cuánto terminó generando lo que publicamos?`
+    : `Todo lo que ocurrió entre esas fechas, sin importar cuándo se publicó cada video. Responde: ¿cuánto generó el canal?`;
+  $('swexp').innerHTML=S.modo==='A'
+    ? `<b>Switch OFF.</b> Filtro por <b>fecha de publicación</b>. Un video publicado en ${describir()} aporta <b>todas</b> sus vistas acumuladas, incluidas las de meses posteriores.`
+    : `<b>Switch ON.</b> Filtro por <b>fecha en que se generó la métrica</b>. Cuentan las vistas ocurridas en ${describir()}, las haya traído un video de ese mes o uno de 2023.`;
+  $('s-switch').setAttribute('aria-checked',String(S.modo==='B'));
+  $('lab-off').classList.toggle('on',S.modo==='A');
+  $('lab-on').classList.toggle('on',S.modo==='B');
 
   /* KPIs */
   $('kpis').innerHTML=METRICAS[S.modo].filter(k=>!(k.req==='subs'&&!TIENE_SUBS_DESGLOSE))
@@ -626,8 +693,8 @@ function render(){
   const cats=porCategoria().sort((a,b)=>(b[S.ordCat.k]-a[S.ordCat.k])*(S.ordCat.dir<0?1:-1));
   ULT.cats=cats;
   $('cats-sub').textContent=S.modo==='A'
-    ? `Categorías de los ${tot.n} videos publicados en el período seleccionado.`
-    : `Catálogo completo (${VIDEOS.length} videos). En modo B las categorías no se recortan por fecha — ver nota al pie.`;
+    ? `Métricas acumuladas de los ${tot.n} videos publicados en ${describir()}, agrupadas por categoría.`
+    : `Catálogo completo (${VIDEOS.length} videos). Con el switch en ON las categorías no se recortan por fecha — ver nota al pie.`;
   $('share-n').textContent=`${cats.reduce((a,c)=>a+c.n,0)} videos`;
   compartir($('c-share'),cats);
   dispersion($('c-scatter'),cats.filter(c=>c.n>=3).map(c=>({t:catL(c.cat),x:c.vpv,y:c.ctr||0,n:c.n,tot:c.vistas})));
@@ -638,7 +705,8 @@ function render(){
   avisos(filas,tot);
 }
 
-function tarjeta(k,tot,base){
+function tarjeta(k,tot,cmp){
+  const base=baseUsable(cmp);
   const v=tot[k.k];
   const d=(cur,prev)=>{
     if(prev==null||cur==null||!isFinite(prev)||!prev)return'';
@@ -649,8 +717,10 @@ function tarjeta(k,tot,base){
     return `<span class="d ${inv?(cls==='up'?'dn':cls==='dn'?'up':cls):cls}">${p>0?'▲':p<0?'▼':'■'} ${fmt(Math.abs(p),1)}${uni}</span>`};
   const lbl=S.comp==='none'?'Comparación desactivada'
     :base?(S.comp==='yoy'?'vs. mismo período del año anterior':'vs. período anterior')
+    :cmp?.incompleta?`Sin base comparable: faltan ${cmp.faltan} de ${cmp.total} períodos en los datos`
     :S.comp==='yoy'?'No hay año anterior en la base':'No hay período anterior en la base';
   return `<div class="kpi"><div class="k-t">${esc(k.t)}</div>
+    <div class="k-u">${esc(UNIV())}</div>
     <div class="k-v">${k.f(v)}</div>
     <div class="deltas">${base?d(v,base[k.k])||'<span class="d flat">sin base</span>':''}</div>
     <div class="k-f">${esc(lbl)}${S.modo==='A'&&k.k!=='n'?` · ${tot.n} videos`:''}</div></div>`;
@@ -717,14 +787,15 @@ function tablaCats(cats){
 }
 function tablaDatos(filas,m){
   const cols=S.modo==='A'
-    ? [['k','Período','l'],['n','Videos'],['v','Vistas acum.'],['vpv','Vistas/video'],['ctr','CTR'],['sg','Subs ganados']]
+    ? [['k','Publicados en','l'],['n','Videos'],['v','Vistas acum.'],['vpv','Vistas/video'],['ctr','CTR acum.'],['sg','Subs ganados'],['edad','Antigüedad media']]
     : [['k','Período','l'],['v','Vistas'],['i','Impresiones'],['ctr','CTR'],['sn','Subs netos'],
        ...(TIENE_SUBS_DESGLOSE?[['sg','Ganados'],['sp','Perdidos']]:[]),['ing','Ingresos'],['rpm','RPM']];
-  $('datos-t').textContent=`${filas.length} ${S.gran==='mes'?'meses':S.gran==='quarter'?'quarters':'años'} · modo ${S.modo}`;
+  $('datos-t').textContent=`${filas.length} ${S.gran==='mes'?'meses':S.gran==='quarter'?'quarters':'años'} · switch ${S.modo==='A'?'OFF':'ON'}`;
   const val=(r,k)=>k==='k'?`<td class="l">${esc(rotulo(r.k))} ${r.parcial?'<span class="tag warn">parcial</span>':''}</td>`
     :`<td class="num">${k==='ctr'?(r.ctr==null?'—':fmt(r.ctr,2)+' %')
       :k==='rpm'?(r.rpm==null?'—':'US$ '+fmt(r.rpm,2)):k==='ing'?'US$ '+fmt(r.ing,0)
-      :k==='vpv'?compact(r.vpv):['n','sn','sg','sp'].includes(k)?(r[k]==null?'—':fmt(r[k],0)):compact(r[k])}</td>`;
+      :k==='vpv'?compact(r.vpv):k==='edad'?(r.edad==null?'—':fmt(r.edad,0)+' d')
+      :['n','sn','sg','sp'].includes(k)?(r[k]==null?'—':fmt(r[k],0)):compact(r[k])}</td>`;
   $('t-datos').innerHTML=`<thead><tr>${cols.map(([k,t,cl])=>`<th class="${cl||''}">${t}</th>`).join('')}</tr></thead>`+
     `<tbody>${filas.map(r=>`<tr>${cols.map(([k])=>val(r,k)).join('')}</tr>`).join('')}</tbody>`;
   ULT.colsDatos=cols;
@@ -738,36 +809,48 @@ function csv(nombre,cab,filas){
 }
 
 /* ── 8. avisos metodológicos ─────────────────────────────── */
+/* Arma la frase que aparece en los titulos: "enero 2025", "Q1 de 2025",
+   "2024–2026". Es lo que hace que un KPI se lea solo. */
 function describir(){
-  const a=[...S.anios].sort(), q=[...S.quarters].sort(), me=[...S.meses].sort((x,y)=>x-y);
-  const todosQ=q.length===4, todosM=me.length===12;
-  let p=a.length===ANIOS.length?`${a[0]}–${a.at(-1)}`:a.join(', ');
-  if(!todosQ) p+=' · '+q.map(x=>'Q'+x).join(', ');
-  else if(!todosM) p+=' · '+me.map(x=>MES[x-1]).join(', ');
-  return p||'sin selección';
+  const a=[...S.anios].sort(), q=[...S.quarters].sort((x,y)=>x-y), me=[...S.meses].sort((x,y)=>x-y);
+  if(!a.length) return 'sin selección';
+  const anios=a.length===ANIOS.length&&a.length>1?`${a[0]}–${a.at(-1)}`
+    :a.length===1?a[0]:a.slice(0,-1).join(', ')+' y '+a.at(-1);
+  const lista=(xs,f)=>xs.length===1?f(xs[0]):xs.slice(0,-1).map(f).join(', ')+' y '+f(xs.at(-1));
+  if(me.length<12) return `${lista(me,x=>MESL[x-1])} de ${anios}`;
+  if(q.length<4)   return `${lista(q,x=>'Q'+x)} de ${anios}`;
+  return anios;
 }
 function avisos(filas,tot){
   const out=[];
-  if(S.modo==='A'&&!SERIE_VIDEO) out.push(['warn','!',
-    `<b>Modo A con sesgo de antigüedad.</b> Las métricas por video son un acumulado desde su publicación, no las vistas del período. Un video de enero 2025 lleva ${MESES.length>1?'meses':''} acumulando y uno reciente apenas días, así que los períodos recientes se ven artificialmente peores. Para corregirlo hace falta un export <code>video × fecha</code> — ver nota al pie.`]);
+  if(S.modo==='A'&&filas.length>1){
+    const es=filas.filter(r=>r.edad!=null).map(r=>r.edad);
+    if(es.length>1&&Math.max(...es)/Math.max(1,Math.min(...es))>1.5) out.push(['warn','!',
+      `<b>Lotes de distinta antigüedad.</b> El acumulado depende del tiempo que cada video lleva publicado: el lote más viejo en pantalla lleva ${fmt(Math.max(...es),0)} días y el más nuevo ${fmt(Math.min(...es),0)}. Es correcto para responder "cuánto generó cada lote", pero al comparar períodos mirá la columna <b>antigüedad media</b> antes de concluir que un lote rindió peor.`]);
+  }
   if(S.modo==='A'&&D.meta.n_videos_canal&&VIDEOS.length<D.meta.n_videos_canal) out.push(['warn','!',
-    `<b>Muestra parcial.</b> Hay ${VIDEOS.length} de ${D.meta.n_videos_canal} videos cargados: los CSV no están en el repo. Los números de modo A y de categorías son de esa muestra, no del catálogo completo.`]);
+    `<b>Muestra parcial.</b> Hay ${VIDEOS.length} de ${D.meta.n_videos_canal} videos cargados: los CSV no están en el repo. Con el switch en OFF, y en la sección de categorías, los números salen de esa muestra y no del catálogo completo.`]);
   if(filas.some(r=>r.parcial)) out.push(['warn','!',
     `<b>Períodos incompletos.</b> ${filas.filter(r=>r.parcial).map(r=>rotulo(r.k)).join(', ')} no está cerrado. Se marca punteado en los gráficos y como "parcial" en la tabla; no lo compares de frente contra períodos completos.`]);
   if(S.gran==='anio'&&S.anios.has('2026')) out.push(['info','i',
     `<b>2026 va hasta ${esc(D.meta.corte)}.</b> Al comparar años completos contra 2026 estás comparando 12 meses contra ${new Set(MESES.filter(m=>m.p.startsWith('2026')&&!PARCIALES.has(m.p)).map(m=>m.p)).size}.`]);
+  const cmp=comparar();
+  if(cmp?.incompleta) out.push(['warn','!',
+    `<b>Comparación suprimida.</b> El período de referencia se sale de los datos disponibles: faltan ${cmp.faltan} de ${cmp.total} períodos. Mostrar una variación contra un hueco daría una caída inventada, así que no se muestra. Elegí un período más corto o cambiá el tipo de comparación.`]);
   if(S.modo==='B'&&!TIENE_SUBS_DESGLOSE) out.push(['info','i',
     `<b>Subs sólo en neto.</b> El desglose ganados / perdidos por mes está en <code>metricas_canal.csv</code>, que no está cargado. El neto sí es correcto.`]);
   if(S.modo==='B') out.push(['info','i',
-    `<b>Las categorías no siguen el filtro temporal en modo B.</b> Para repartir las vistas de un período entre categorías haría falta saber qué video generó cada vista cada día. Con los datos actuales la sección 04 muestra el catálogo acumulado. En modo A sí se recorta, por fecha de publicación.`]);
+    `<b>Con el switch en ON las categorías no siguen el filtro temporal.</b> Para repartir entre categorías las vistas de un período haría falta saber qué video generó cada vista cada día, y <code>metricas_video.csv</code> no trae fechas. La sección 04 muestra el catálogo acumulado. Poné el switch en OFF y las categorías sí se recortan, por fecha de publicación.`]);
   $('avisos').innerHTML=out.map(([c,ic,t])=>
     `<div class="note ${c}"><span class="ic">${ic}</span><div>${t}</div></div>`).join('');
 }
 const METODO=[
- 'CTR = suma(clicks) ÷ suma(impresiones) del período. Nunca el promedio de los CTR de cada video o cada día: un promedio simple le da el mismo peso a un video con mil impresiones que a uno con un millón.',
+ '<b>Switch OFF — videos publicados en el período.</b> Se filtra por fecha de publicación y se cuenta el acumulado completo de esos videos, desde que salieron hasta el corte. Un video de enero 2025 con 300.000 vistas aporta las 300.000, aunque la mayoría las haya juntado en marzo.',
+ '<b>Switch ON — todo el canal durante el período.</b> Se filtra por la fecha en que se generó la métrica. Cuenta lo que ocurrió entre esas fechas, sin importar cuándo se publicó el video que lo trajo.',
+ 'Los dos universos nunca se mezclan en un mismo indicador. Cambia el color del panel (violeta / azul), el título de cada KPI dice de qué universo sale el número, y el switch activo va en la barra superior.',
+ 'CTR = suma(clicks) ÷ suma(impresiones). Nunca el promedio de los CTR de cada video o cada día: un promedio simple le da el mismo peso a un video con mil impresiones que a uno con un millón.',
  '% reproducido y AVD se ponderan por vistas. RPM = ingresos ÷ (vistas / 1000).',
- 'Modo A y modo B nunca se mezclan en un mismo indicador. El color del panel cambia (violeta / azul) y el modo activo va siempre en la barra superior.',
- 'Modo A agrupa por fecha de publicación del video. Modo B agrupa por fecha en que ocurrió la vista.',
+ 'En OFF, la antigüedad media del lote se muestra en la tabla y en los KPIs: es lo que hace comparables (o no) dos períodos entre sí.',
  'Todo período incompleto se marca punteado en los gráficos y con la etiqueta "parcial" en las tablas.',
  'Las comparaciones toman siempre la misma cantidad de períodos que la selección activa, corridos hacia atrás (o un año atrás en modo interanual).',
  'Las categorías con menos de 8 videos se marcan "muestra chica": el promedio por video es demasiado inestable para rankearlas.',
@@ -798,7 +881,7 @@ function llenarMetricas(){
   if(!METRICAS[S.modo].some(m=>m.k===S.metrica))S.metrica=METRICAS[S.modo][0].k;
   $('s-metrica').value=S.metrica;
 }
-seg('s-modo','modo',llenarMetricas);
+$('s-switch').onclick=()=>{S.modo=S.modo==='B'?'A':'B';llenarMetricas();render()};
 seg('s-gran','gran');
 seg('s-tipo','tipo');
 $('s-comp').onchange=e=>{S.comp=e.target.value;render()};
@@ -818,7 +901,7 @@ $('b-exp-datos').onclick=()=>csv(`joy-serie-${S.modo}-${S.gran}-${Date.now()}.cs
   ULT.colsDatos.map(c=>c[1]),ULT.filas.map(r=>ULT.colsDatos.map(([k])=>k==='k'?rotulo(r.k):r[k])));
 
 $('metodo').innerHTML=METODO.map(t=>`<li>${t}</li>`).join('')+
-  (SERIE_VIDEO?'':`<li><b style="color:var(--warn)">Pendiente:</b> para separar "vistas de videos nuevos" de "vistas del catálogo" dentro de un mismo período hace falta un export de YouTube Studio con una fila por video y por día. Sin eso, el modo A mide el acumulado de cada video y no lo que generó dentro del período.</li>`);
+  (SERIE_VIDEO?'':`<li><b style="color:var(--warn)">Única cosa que no se puede calcular:</b> repartir por categoría las vistas de un período con el switch en ON, o separar "vistas de videos nuevos" de "vistas del catálogo" dentro de un mismo mes. Las dos cosas necesitan un export de YouTube Studio con una fila por video y por día. Los dos universos del switch, tal como están definidos, sí se calculan correctamente con los datos actuales.</li>`);
 
 llenarMetricas();
 render();
