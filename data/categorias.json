@@ -1,0 +1,48 @@
+{
+ "_nota": "Reglas para deducir la categoría desde el título del video. Los exports de YouTube Studio no traen categoría, así que se infiere acá. Se evalúan EN ORDEN: gana la primera que coincide. Los patrones son expresiones regulares, sin distinguir mayúsculas. Editá libremente y volvé a correr build_analytics.py.",
+ "_etiquetas": {
+  "FUTBOL": "Fútbol",
+  "DEPORTES": "Otros deportes",
+  "RACING_MOTOR": "Racing / motor",
+  "EXTREME_SPORTS": "Extreme sports",
+  "SHOOTER_MILITAR": "Shooter militar",
+  "HORROR_SURVIVAL": "Horror / survival",
+  "MUNDO_ABIERTO_RPG": "Mundo abierto / RPG",
+  "ACCION_AVENTURA": "Acción / aventura",
+  "OTROS": "Sin clasificar"
+ },
+ "reglas": [
+  [
+   "FUTBOL",
+   "\\bfifa\\b|\\bfc ?2[456]\\b|premier league|champions league|\\bliga\\b|la liga|\\bserie a\\b|bundesliga|world cup|mundial|\\bmatch\\b|prediction|manchester|liverpool|arsenal|chelsea|barcelona|real madrid|juventus|\\bpsg\\b|bayern|tottenham|penalty|efootball|pes ?20|football"
+  ],
+  [
+   "EXTREME_SPORTS",
+   "riders republic|\\bsteep\\b|tony hawk|\\bskate|snowboard|\\bski\\b|\\bsurf|descenders|\\bbmx\\b|shredders|mountain bike|downhill|wingsuit|parachut|snow sports|motocross|supercross|monster energy|trials rising"
+  ],
+  [
+   "RACING_MOTOR",
+   "gran turismo|forza|\\bwrc\\b|\\bdirt ?[0-9]?\\b|\\brally\\b|\\bride [0-9]|motogp|\\bf1\\b|formula 1|need for speed|\\bnfs\\b|assetto|dakar|crew motorfest|driveclub|burnout|trackmania|hot wheels|nascar|wreckfest|monster jam|\\bgrid\\b|project cars|test drive|car mechanic|mx vs atv"
+  ],
+  [
+   "SHOOTER_MILITAR",
+   "call of duty|\\bcod\\b|battlefield|modern warfare|black ops|ghost recon|rainbow six|arma ?3|insurgency|sniper|medal of honor|warzone|vanguard|\\bmw[23]\\b|ace combat|war thunder|hell let loose|\\bsquad\\b|the division|payday|\\bcrysis\\b"
+  ],
+  [
+   "HORROR_SURVIVAL",
+   "resident evil|silent hill|days gone|dying light|dead space|outlast|little nightmares|the evil within|alan wake|amnesia|sons? of the forest|zombie|survival horror|left 4 dead|dead island|callisto|phasmophobia|world war z|metro exodus|the forest|\\bterrif|\\bscary\\b|\\bhorror\\b"
+  ],
+  [
+   "MUNDO_ABIERTO_RPG",
+   "witcher|elden ring|skyrim|fallout|cyberpunk|far cry|\\bprimal\\b|assassin|red dead|horizon zero|horizon forbidden|ghost of tsushima|elder scrolls|dragon age|mass effect|starfield|\\bgta\\b|grand theft|watch dogs|hogwarts|baldur|monster hunter|open world"
+  ],
+  [
+   "ACCION_AVENTURA",
+   "uncharted|god of war|spider.?man|tomb raider|avengers|batman|arkham|hellblade|ratchet|sifu|mortal kombat|street fighter|tekken|devil may cry|sekiro|returnal|\\bhalo\\b|gears of war|jedi|star wars|marvel|wolverine|\\bthor\\b|captain america|iron man|last of us|metal gear|hitman|chivalry|infamous|lost judgment|yakuza|deliver us|train robbery|\\bstealth\\b"
+  ],
+  [
+   "DEPORTES",
+   "\\btennis\\b|\\bufc\\b|\\bnba\\b|\\bnfl\\b|\\bmlb\\b|\\bnhl\\b|\\bgolf\\b|boxing|wrestling|\\bwwe\\b|cricket|sports game"
+  ]
+ ]
+}

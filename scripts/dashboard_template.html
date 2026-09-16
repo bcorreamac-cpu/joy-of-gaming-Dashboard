@@ -325,8 +325,7 @@ const nn=f=>x=>x==null||!isFinite(x)?'—':f(x);
 const compact=x=>x==null||!isFinite(x)?'—':Math.abs(x)>=1e6?fmt(x/1e6,1)+'M':Math.abs(x)>=1e3?fmt(x/1e3,0)+'k':fmt(x,0);
 const MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const MESL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-const CATL={EXTREME_SPORTS:'Extreme sports',RACING_MOTOR:'Racing / motor',SHOOTER_MILITAR:'Shooter militar',
-  HORROR_SURVIVAL:'Horror / survival',MUNDO_ABIERTO_RPG:'Mundo abierto / RPG',ACCION_AVENTURA:'Acción / aventura',OTROS:'Otros'};
+const CATL=D.meta.cat_etiquetas||{};
 const catL=c=>CATL[c]||c;
 const PAL=['#4d8dff','#3ddc97','#f5b84b','#c07cff','#ff5d6c','#38d6d6','#9aa8c7'];
 
@@ -343,9 +342,15 @@ const MESES=(()=>{
   }
   return [...acc.values()].sort((a,b)=>a.p<b.p?-1:1).map(o=>({...o,sn:o.sg-o.sp}));
 })();
-const VIDEOS=(D.videos||[]).filter(v=>v.lg!==false);
+const MIN_DIAS=D.meta.min_dias_video??0;
+const VIDEOS_TODOS=(D.videos||[]).filter(v=>v.lg!==false);
+const VIDEOS=VIDEOS_TODOS.filter(v=>(v.edad??999)>=MIN_DIAS);
+const N_SHORTS=(D.videos||[]).length-VIDEOS_TODOS.length;
+const N_NUEVOS=VIDEOS_TODOS.length-VIDEOS.length;
 const PARCIALES=new Set(D.meta.meses_parciales||[]);
-const ANIOS=[...new Set(MESES.map(m=>m.p.slice(0,4)))].sort();
+const ANIOS_CANAL=[...new Set(MESES.map(m=>m.p.slice(0,4)))].sort();
+const ANIOS_VIDEO=[...new Set((D.videos||[]).map(v=>v.pub.slice(0,4)))].sort();
+const aniosValidos=()=>S.modo==='A'?ANIOS_VIDEO:ANIOS_CANAL;
 // El desglose ganados/perdidos sirve solo si lo traen TODOS los meses:
 // con algunos sueltos cualquier suma del periodo sale incompleta.
 const TIENE_SUBS_DESGLOSE=MESES.length>0&&MESES.every(m=>m.sg!=null);
@@ -353,10 +358,14 @@ const SERIE_VIDEO=!!D.meta.video_serie_temporal;
 const RANGO={min:MESES[0]?.p,max:MESES.at(-1)?.p};
 const RANGO_VID=(()=>{const ps=VIDEOS.map(v=>v.pub.slice(0,7)).sort();
   return{min:ps[0],max:ps.at(-1)}})();
+/* El export por video mide dentro de una ventana, no la vida entera del
+   video: uno publicado antes de que empiece la ventana llega con su historial
+   recortado. */
+const VENTANA_INI=(D.meta.ventana_videos||[])[0];
 
 /* ── 2. estado ───────────────────────────────────────────── */
 const S={modo:'B',gran:'mes',comp:'prev',metrica:'v',tipo:'linea',
-  anios:new Set(ANIOS),quarters:new Set([1,2,3,4]),meses:new Set([1,2,3,4,5,6,7,8,9,10,11,12]),
+  anios:new Set(ANIOS_CANAL),quarters:new Set([1,2,3,4]),meses:new Set([1,2,3,4,5,6,7,8,9,10,11,12]),
   ordCat:{k:'vistas',dir:-1},ordDatos:{k:'p',dir:1}};
 
 /* Los rotulos dicen de que universo sale cada numero: en OFF todo es
@@ -449,10 +458,11 @@ function total(rows){
    variación sale contra el período equivocado. */
 function mesesSeleccionados(){
   const out=[];
-  for(let y=+RANGO.min.slice(0,4);y<=+RANGO.max.slice(0,4);y++)
+  const lim=S.modo==='A'?RANGO_VID:RANGO;
+  for(let y=+lim.min.slice(0,4);y<=+lim.max.slice(0,4);y++)
     for(let mm=1;mm<=12;mm++){
       const p=`${y}-${String(mm).padStart(2,'0')}`;
-      if(p>=RANGO.min&&p<=RANGO.max&&pasa(p))out.push(p);
+      if(p>=lim.min&&p<=lim.max&&pasa(p))out.push(p);
     }
   return out;
 }
@@ -812,17 +822,22 @@ function csv(nombre,cab,filas){
 /* Arma la frase que aparece en los titulos: "enero 2025", "Q1 de 2025",
    "2024–2026". Es lo que hace que un KPI se lea solo. */
 function describir(){
-  const a=[...S.anios].sort(), q=[...S.quarters].sort((x,y)=>x-y), me=[...S.meses].sort((x,y)=>x-y);
+  const a=[...S.anios].filter(y=>aniosValidos().includes(y)).sort(), q=[...S.quarters].sort((x,y)=>x-y), me=[...S.meses].sort((x,y)=>x-y);
   if(!a.length) return 'sin selección';
-  const anios=a.length===ANIOS.length&&a.length>1?`${a[0]}–${a.at(-1)}`
+  const txtAnios=a.length===aniosValidos().length&&a.length>1?`${a[0]}–${a.at(-1)}`
     :a.length===1?a[0]:a.slice(0,-1).join(', ')+' y '+a.at(-1);
   const lista=(xs,f)=>xs.length===1?f(xs[0]):xs.slice(0,-1).map(f).join(', ')+' y '+f(xs.at(-1));
-  if(me.length<12) return `${lista(me,x=>MESL[x-1])} de ${anios}`;
-  if(q.length<4)   return `${lista(q,x=>'Q'+x)} de ${anios}`;
-  return anios;
+  if(me.length<12) return `${lista(me,x=>MESL[x-1])} de ${txtAnios}`;
+  if(q.length<4)   return `${lista(q,x=>'Q'+x)} de ${txtAnios}`;
+  return txtAnios;
 }
 function avisos(filas,tot){
   const out=[];
+  if(S.modo==='A'&&VENTANA_INI){
+    const truncados=VIDEOS.filter(v=>pasa(v.pub.slice(0,7))&&v.pub<VENTANA_INI+'-01-01');
+    if(truncados.length) out.push(['warn','!',
+      `<b>Historial recortado en ${fmt(truncados.length,0)} videos.</b> El export mide vistas desde ${VENTANA_INI}, no desde que el video salió. Los publicados antes de ${VENTANA_INI} muestran solo lo que juntaron de ${VENTANA_INI} en adelante, así que su acumulado está subestimado. Para los publicados de ${VENTANA_INI} en adelante el número sí es completo.`]);
+  }
   if(S.modo==='A'&&filas.length>1){
     const es=filas.filter(r=>r.edad!=null).map(r=>r.edad);
     if(es.length>1&&Math.max(...es)/Math.max(1,Math.min(...es))>1.5) out.push(['warn','!',
@@ -837,6 +852,10 @@ function avisos(filas,tot){
   const cmp=comparar();
   if(cmp?.incompleta) out.push(['warn','!',
     `<b>Comparación suprimida.</b> El período de referencia se sale de los datos disponibles: faltan ${cmp.faltan} de ${cmp.total} períodos. Mostrar una variación contra un hueco daría una caída inventada, así que no se muestra. Elegí un período más corto o cambiá el tipo de comparación.`]);
+  if(D.meta.cat_inferida) out.push(['info','i',
+    `<b>Las categorías están deducidas del título.</b> Los exports de YouTube Studio no traen categoría, así que se infiere con reglas por nombre de juego (<code>data/categorias.json</code>, editable). Quedan <b>${fmt(VIDEOS.filter(v=>v.cat==='OTROS').length,0)}</b> videos sin clasificar de ${fmt(VIDEOS.length,0)}. Validado contra 30 videos etiquetados a mano: 29 coincidieron.`]);
+  if(N_SHORTS||N_NUEVOS) out.push(['info','i',
+    `<b>Qué videos entran.</b> Del catálogo se excluyen ${fmt(N_SHORTS,0)} shorts y ${fmt(N_NUEVOS,0)} videos con menos de ${MIN_DIAS} días publicados (todavía no juntaron sus vistas y hundirían el promedio del lote). Quedan <b>${fmt(VIDEOS.length,0)}</b>.`]);
   if(S.modo==='B'&&!TIENE_SUBS_DESGLOSE) out.push(['info','i',
     `<b>Subs sólo en neto.</b> El desglose ganados / perdidos por mes está en <code>metricas_canal.csv</code>, que no está cargado. El neto sí es correcto.`]);
   if(S.modo==='B') out.push(['info','i',
@@ -881,17 +900,23 @@ function llenarMetricas(){
   if(!METRICAS[S.modo].some(m=>m.k===S.metrica))S.metrica=METRICAS[S.modo][0].k;
   $('s-metrica').value=S.metrica;
 }
-$('s-switch').onclick=()=>{S.modo=S.modo==='B'?'A':'B';llenarMetricas();render()};
+function sincronizarAnios(){
+  const validos=aniosValidos();
+  S.anios=new Set([...S.anios].filter(y=>validos.includes(y)));
+  if(!S.anios.size)S.anios=new Set(validos);
+  conmutadores($('t-anios'),validos,S.anios,v=>v);
+}
+$('s-switch').onclick=()=>{S.modo=S.modo==='B'?'A':'B';sincronizarAnios();llenarMetricas();render()};
 seg('s-gran','gran');
 seg('s-tipo','tipo');
 $('s-comp').onchange=e=>{S.comp=e.target.value;render()};
 $('s-metrica').onchange=e=>{S.metrica=e.target.value;render()};
-conmutadores($('t-anios'),ANIOS,S.anios,v=>v);
+conmutadores($('t-anios'),aniosValidos(),S.anios,v=>v);
 conmutadores($('t-q'),[1,2,3,4],S.quarters,v=>'Q'+v);
 conmutadores($('t-meses'),[1,2,3,4,5,6,7,8,9,10,11,12],S.meses,v=>MES[v-1]);
 $('b-reset').onclick=()=>{
-  S.anios=new Set(ANIOS);S.quarters=new Set([1,2,3,4]);S.meses=new Set([1,2,3,4,5,6,7,8,9,10,11,12]);
-  conmutadores($('t-anios'),ANIOS,S.anios,v=>v);
+  S.anios=new Set(aniosValidos());S.quarters=new Set([1,2,3,4]);S.meses=new Set([1,2,3,4,5,6,7,8,9,10,11,12]);
+  conmutadores($('t-anios'),aniosValidos(),S.anios,v=>v);
   conmutadores($('t-q'),[1,2,3,4],S.quarters,v=>'Q'+v);
   conmutadores($('t-meses'),[1,2,3,4,5,6,7,8,9,10,11,12],S.meses,v=>MES[v-1]);
   render()};

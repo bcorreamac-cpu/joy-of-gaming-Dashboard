@@ -41,35 +41,47 @@ Un −93 % contra un hueco es peor que no mostrar nada.
 
 ## Actualizar con data nueva
 
-1. Copiá los CSV a `data/`: `catalogo_videos.csv`, `metricas_video.csv`,
-   `metricas_canal.csv`. No se versionan (ver `.gitignore`).
-2. Corré:
+Los exports de YouTube Studio se cortan en **500 filas**, así que hay que
+partirlos y juntarlos después. El script acepta varios archivos por tipo.
+
+1. Descargá de YouTube Studio → Analytics → Modo avanzado:
+   - Pestaña **Fecha**, agrupado por día. Partí el rango en tramos de 500 días.
+   - Pestaña **Contenido**. Partí por año de publicación del video.
+2. De cada ZIP sacá `Datos de la tabla.csv` y dejalo en `data/entrada/` como
+   `canal_*.csv` o `videos_*.csv`. El nombre después del prefijo da igual.
+3. Corré:
    ```
-   pip install pandas
-   python scripts/build.py             # data/data.json      -> reporte fijo
-   python scripts/build_analytics.py   # data/analytics.json -> dashboard
-   python scripts/render.py            # index.html
+   python scripts/build_analytics.py   # data/analytics.json
    python scripts/render_dashboard.py  # dashboard.html
    ```
 
-Sin los CSV, `build_analytics.py` aborta sin pisar nada. El
-`data/analytics.json` que hay en el repo lo generó
-`scripts/build_analytics_interino.py`, que reconstruye lo que puede desde
-`data.json` y el historial de git: 32 meses de canal reales, pero sólo 30 de
-los 401 videos. El dashboard lo avisa en pantalla mientras esté así.
+Sin dependencias: solo biblioteca estándar. Si falta algún CSV, el script
+aborta sin pisar el `analytics.json` existente.
 
-## Lo que todavía no se puede calcular
+**Un archivo cortado se reconoce** porque tiene exactamente 501 filas de datos
+y mezcla varios años de publicación. Los buenos traen un solo año.
 
-Para separar **vistas de videos nuevos** de **vistas del catálogo** dentro de
-un mismo período hace falta un export con **una fila por video y por día**.
-`metricas_video.csv` trae un total acumulado por video, sin fecha.
+## Categorías
 
-Consecuencias mientras no esté:
+Los exports **no traen categoría**. Se deduce del título con reglas por nombre
+de juego, en `data/categorias.json` — editable, se evalúan en orden y gana la
+primera que coincide. Validado contra 30 videos etiquetados a mano: 29
+coincidieron. El dashboard muestra cuántos quedan sin clasificar.
 
-- El modo A mide el acumulado de cada video, no lo que generó dentro del
-  período. Un video viejo lleva meses sumando y uno nuevo apenas días, así que
-  los períodos recientes se ven peores de lo que son.
-- Las categorías no siguen el filtro temporal en modo B.
+## Límites conocidos
+
+- **Historial recortado antes de 2024.** El export por video mide dentro de la
+  ventana pedida, no desde que el video salió. Los publicados antes de 2024
+  muestran solo lo que juntaron de 2024 en adelante. Para los de 2024 en
+  adelante el acumulado es completo. El panel lo avisa cuando corresponde.
+- **Categorías en modo ON.** Repartir por categoría las vistas de un período
+  necesita un export con una fila por video y por día. Sin eso, la sección de
+  categorías con el switch en ON muestra el catálogo acumulado.
+- **YouTube no cuadra consigo mismo.** En los exports por video, la suma de las
+  filas difiere de la fila "Total" del propio archivo en 39 suscriptores sobre
+  47.124 (0,08 %). Se respetan las filas.
+- **Videos anteriores a 2020.** El filtro de YouTube no deja seleccionarlos:
+  quedan fuera unas 31 mil vistas de 27 millones (0,1 %).
 
 ## Reglas de cálculo
 
