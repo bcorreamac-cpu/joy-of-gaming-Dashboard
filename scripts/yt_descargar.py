@@ -317,6 +317,19 @@ def comprobar():
     ayer = (date.today() - timedelta(ATRASO)).isoformat()
     base = {'ids': 'channel==MINE', 'startDate': ayer, 'endDate': ayer, 'dimensions': 'day'}
 
+    # Sin esto no se sabe si el token mira el canal correcto: un canal vacío
+    # también devuelve filas, todas en cero, y parece que funciona.
+    try:
+        r = get(ANALYTICS, {'ids': 'channel==MINE', 'startDate': DESDE,
+                            'endDate': ayer, 'metrics': 'views'}, token)
+        v = ((r.get('rows') or [[0]])[0])[0]
+        print(f'  Vistas del canal desde {DESDE}: {v:,.0f}'.replace(',', '.'))
+        if not v:
+            print('  OJO: cero vistas. El token está mirando un canal sin datos.')
+        print()
+    except ErrorAPI as e:
+        print(f'  No se pudo leer el total del canal: {e.codigo}\n')
+
     # Las dos primeras son imprescindibles; las impresiones, no.
     graves = []
     for etq, ms, esencial in [('métricas base   ', M_CANAL[:4], True),
@@ -341,10 +354,9 @@ def comprobar():
     for etq, extra in [('solas, por día      ', {'dimensions': 'day'}),
                        ('solas, sin dimensión', {}),
                        ('solas, por video    ', {'dimensions': 'video',
-                                                 'sort': '-views', 'maxResults': 5})]:
+                                                 'maxResults': 5})]:
         p = {'ids': 'channel==MINE', 'startDate': ayer, 'endDate': ayer,
              'metrics': ','.join(OPCIONALES), **extra}
-        p.pop('dimensions', None) if not extra.get('dimensions') else None
         try:
             r = get(ANALYTICS, p, token)
             print(f'  OK    impresiones {etq}  filas: {len(r.get("rows") or [])}')
