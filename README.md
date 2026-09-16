@@ -192,16 +192,31 @@ categorías y todos los pares en juego ningún orden de colores se distingue bie
 así que identifica la etiqueta sobre cada burbuja. Una etiqueta que no entra sin
 pisar a otra no se dibuja — el dato sigue en el tooltip y en la tabla.
 
-## Impresiones y CTR: histórico congelado
+## Impresiones y CTR: a mano, una vez por semana
 
 El API de YouTube **no entrega impresiones ni CTR** (responde `The query is not
 supported`, probado por día, sin dimensión y por video). Los exports manuales de
 Studio sí las traían.
 
-Para no perder lo ya medido, esas dos columnas quedaron congeladas en
-`data/historico/`: 988 días y 295 videos, de 2024-01-01 al 2026-09-14. El
-descargador las reinyecta cuando el API no las devuelve. De esa fecha en
-adelante, el CTR queda vacío hasta que Google las exponga.
+Lo ya medido quedó congelado en `data/historico/`: 988 días y 295 videos, de
+2024-01-01 al 2026-09-14. El descargador las reinyecta cuando el API no las
+devuelve.
+
+De ahí en adelante se cargan a mano, con la extensión de Claude en Chrome:
+**`PROMPT_CTR.md`** tiene el prompt y el paso a paso, unos cinco minutos por
+semana. Después:
+
+```
+python3 scripts/ctr_actualizar.py ctr.csv
+```
+
+Es incremental y aguanta entrada sucia: acepta el título del video o su ID,
+miles con punto o con coma, decimales con coma, filas repetidas, y descarta
+—diciendo cuáles— las fechas mal formateadas, los CTR imposibles y los títulos
+que no existen en el catálogo.
+
+Si algún día el API empieza a entregarlas, el descargador ya las pide: las toma
+solas y este proceso deja de hacer falta.
 
 ## Validación
 
