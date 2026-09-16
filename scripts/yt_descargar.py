@@ -121,6 +121,15 @@ def consultar(token, params, metricas):
             HAY_CTR = True
         return r
     except ErrorAPI as e:
+        if e.codigo == 403:
+            raise SystemExit(
+                'Analytics respondió 403 Forbidden.\n\n'
+                'El catálogo se lee de datos públicos, así que ese anda igual; '
+                'Analytics, en cambio, exige que el token SEA del dueño del '
+                'canal. Si el canal vive en una cuenta de marca, autorizar con '
+                'la cuenta personal no alcanza, y apuntar con YT_CANAL tampoco: '
+                'hay que volver a correr scripts/yt_autorizar.py y elegir el '
+                'canal de marca en el selector de Google.')
         if e.codigo != 400 or HAY_CTR is False:
             raise SystemExit(f'El API de Analytics respondió {e.codigo}\n{e.cuerpo}')
         print('AVISO: el API rechazó las impresiones y el CTR. Se sigue sin '

@@ -135,6 +135,7 @@ un mail cuando una corrida programada falla.
 | Síntoma | Causa casi segura |
 |---|---|
 | `CERTIFICATE_VERIFY_FAILED` al correr los scripts en macOS | El Python de python.org trae los certificados pero no los instala. Corré `/Applications/Python\ 3.X/Install\ Certificates.command` una vez. |
+| Analytics responde `403 Forbidden` pero el catálogo sí trae videos | El token no es del dueño del canal. El catálogo se lee de datos públicos; Analytics no. Volvé a correr `yt_autorizar.py` y elegí el canal de marca en el selector. `YT_CANAL` no arregla esto. |
 | El catálogo vuelve con 0 videos | El token está mirando el canal personal y no la cuenta de marca. Volvé a autorizar eligiendo el canal correcto, o cargá el secret `YT_CANAL` con el ID del canal (empieza con `UC`). |
 | `invalid_grant` al renovar el token | El permiso caducó: la app volvió a *Prueba*, revocaste el acceso, o Google expiró el token de una app sin verificar. Repetí los pasos 3 y 5. |
 | El workflow dejó de correr solo | GitHub apaga los cron de repos públicos tras 60 días sin actividad. Como esto commitea cada semana, no debería pasar; si pasa, se reactiva desde *Actions*. |
