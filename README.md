@@ -171,6 +171,22 @@ de juego, en `data/categorias.json` — editable, se evalúan en orden y gana la
 primera que coincide. Validado contra 30 videos etiquetados a mano: 29
 coincidieron. El dashboard muestra cuántos quedan sin clasificar.
 
+## Índice relativo y ranking de juegos
+
+El canal cambió de nivel con el tiempo, así que comparar vistas crudas entre
+2024 y 2026 engaña. El **índice relativo** divide las vistas de cada video por
+la mediana de los publicados a su alrededor: `1,0` es lo normal para su época,
+en cualquier época. La base son los 20 videos vecinos en el tiempo y no el mes
+calendario, que partiría en dos a videos publicados con días de diferencia.
+
+`data/juegos.json` lista los juegos que se repiten, con el mismo formato que las
+categorías: se evalúan en orden sobre el título y gana el primero que coincide.
+Solo entran al ranking los que tienen tres videos o más — con menos, un solo
+video viral decide el resultado.
+
+La sección **05 · Qué repetir** ordena los juegos por índice. Es la respuesta a
+"¿qué conviene volver a grabar?".
+
 ## Diseño de los gráficos
 
 La paleta categórica está **validada**, no elegida a ojo: banda de luminosidad,

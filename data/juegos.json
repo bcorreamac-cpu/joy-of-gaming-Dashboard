@@ -1,0 +1,65 @@
+{
+ "_nota": "Juegos que se repiten en el canal. El panel los usa para el ranking de qué repetir. Se evalúan en orden sobre el título y gana el primero que coincide; lo que no coincide queda sin juego y no entra al ranking. Agregá los tuyos acá: es una lista, no hace falta tocar código.",
+ "reglas": [
+  [
+   "Riders Republic",
+   "riders\\s*republic"
+  ],
+  [
+   "Resident Evil Requiem",
+   "resident\\s*evil\\s*requiem"
+  ],
+  [
+   "Far Cry 6",
+   "far\\s*cry\\s*6"
+  ],
+  [
+   "GTA 5",
+   "\\bgta\\s*(?:5|v)\\b|grand\\s*theft\\s*auto\\s*(?:5|v)\\b"
+  ],
+  [
+   "Red Dead Redemption 2",
+   "red\\s*dead\\s*redemption\\s*2|\\brdr\\s*2\\b"
+  ],
+  [
+   "The Last of Us 2",
+   "last\\s*of\\s*us\\s*(?:part\\s*)?(?:2|ii)\\b"
+  ],
+  [
+   "Ride 6",
+   "\\bride\\s*6\\b"
+  ],
+  [
+   "Gran Turismo 7",
+   "gran\\s*turismo\\s*7"
+  ],
+  [
+   "Uncharted 4",
+   "uncharted\\s*4"
+  ],
+  [
+   "Spider-Man 2",
+   "spider[\\s-]*man\\s*2"
+  ],
+  [
+   "MX vs ATV Legends",
+   "mx\\s*vs\\s*atv"
+  ],
+  [
+   "Wreckfest",
+   "wreckfest"
+  ],
+  [
+   "World War Z",
+   "world\\s*war\\s*z"
+  ],
+  [
+   "Steep",
+   "\\bsteep\\b"
+  ],
+  [
+   "F1 25",
+   "\\bf1\\s*25\\b"
+  ]
+ ]
+}

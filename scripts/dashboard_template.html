@@ -359,10 +359,24 @@ footer li{margin-bottom:6px;line-height:1.5}
     </div>
   </section>
 
+  <!-- ── qué repetir ── -->
+  <section id="juegos">
+    <div class="sh">
+      <div><div class="eyebrow">05 · Qué repetir</div><h2>Ranking de juegos</h2></div>
+      <p class="sub" id="juegos-sub"></p>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3>Índice relativo por juego</h3>
+        <span class="mini">1,0 = lo normal para su época</span></div>
+      <div class="chart" id="c-juegos"></div>
+      <p class="mini" style="margin:11px 0 0" id="juegos-nota"></p>
+    </div>
+  </section>
+
   <!-- ── datos ── -->
   <section id="datos">
     <div class="sh">
-      <div><div class="eyebrow">05 · Datos</div><h2>Tabla del período</h2></div>
+      <div><div class="eyebrow">06 · Datos</div><h2>Tabla del período</h2></div>
       <p class="sub">Los números detrás de cada gráfico. Ordená por cualquier columna.</p>
     </div>
     <div class="panel">
@@ -421,6 +435,25 @@ const MESES=(()=>{
 const MIN_DIAS=D.meta.min_dias_video??0;
 const VIDEOS_TODOS=(D.videos||[]).filter(v=>v.lg!==false);
 const VIDEOS=VIDEOS_TODOS.filter(v=>(v.edad??999)>=MIN_DIAS);
+/* Índice relativo: vistas ÷ mediana de los videos publicados alrededor. Con el
+   canal en baja, las vistas crudas de 2024 y 2026 no son comparables; esto sí. */
+const HAY_IX=VIDEOS.some(v=>v.ix!=null);
+const mediana=xs=>{const a=xs.filter(x=>x!=null).sort((p,q)=>p-q);
+  if(!a.length)return null;const m=a.length>>1;
+  return a.length%2?a[m]:(a[m-1]+a[m])/2};
+function porJuego(){
+  const acc=new Map();
+  for(const v of VIDEOS){
+    if(!v.j||v.ix==null)continue;
+    if(!acc.has(v.j))acc.set(v.j,[]);
+    acc.get(v.j).push(v);
+  }
+  return [...acc.entries()].map(([j,vs])=>({
+    j, n:vs.length, ix:mediana(vs.map(v=>v.ix)),
+    v:mediana(vs.map(v=>v.v)), tot:vs.reduce((a,v)=>a+(v.v||0),0),
+    mejor:Math.max(...vs.map(v=>v.v||0))
+  })).sort((a,b)=>b.ix-a.ix);
+}
 const N_SHORTS=(D.videos||[]).length-VIDEOS_TODOS.length;
 const N_NUEVOS=VIDEOS_TODOS.length-VIDEOS.length;
 const PARCIALES=new Set(D.meta.meses_parciales||[]);
@@ -465,6 +498,7 @@ const METRICAS={
      {k:'ctr',t:'CTR acumulado',f:nn(x=>fmt(x,2)+' %'),tipo:'ratio'},
      {k:'sg',t:'Subs ganados acumulados',f:x=>fmt(x,0),tipo:'suma'},
      {k:'s1k',t:'Subs / 1k vistas',f:nn(x=>fmt(x,2)),tipo:'ratio'},
+     {k:'ixm',t:'Índice relativo del lote',f:nn(x=>fmt(x,2)+'x'),tipo:'ratio',req:'ix'},
      {k:'edad',t:'Antigüedad media del lote',f:nn(x=>fmt(x,0)+' días'),tipo:'ratio'}]};
 const UNIV=()=>S.modo==='A'
   ? `Videos publicados en ${describir()}`
@@ -489,6 +523,8 @@ function cerrar(o){
   o.vpv=o.n?o.v/o.n:null;
   o.edad=o.n?o.edadSum/o.n:null;
   o.s1k=o.v?o.sg/o.v*1000:null;
+  // mediana y no promedio: un solo video viral desfiguraría el número del lote
+  o.ixm=o.ixs&&o.ixs.length?mediana(o.ixs):null;
   // sin el desglose completo, cualquier suma de subs del periodo sale corta
   if(!o.subsOk){o.sg=null;o.sp=null;o.s1k=null}
   return o;
@@ -515,6 +551,7 @@ function serieA(){
     if(!pasa(p))continue;
     const k=clave(p),o=acc.get(k)||Object.assign(vacio(),{k,vids:[]});
     o.v+=vd.v||0;o.i+=vd.i||0;o.c+=vd.c||0;o.sg+=vd.sg||0;o.n++;o.vids.push(vd);
+    if(vd.ix!=null)(o.ixs=o.ixs||[]).push(vd.ix);
     o.edadSum+=diasDesde(vd.pub);
     if(PARCIALES.has(p))o.parcial=true;
     acc.set(k,o);
@@ -526,6 +563,7 @@ function total(rows){
   const o=vacio();
   for(const r of rows){o.v+=r.v;o.i+=r.i;o.c+=r.c;o.ing+=r.ing;o.sn+=r.sn;o.n+=r.n;o.meses+=r.meses;
     o.edadSum+=r.edadSum||0;
+    if(r.ixs)o.ixs=(o.ixs||[]).concat(r.ixs);
     if(r.sg==null)o.subsOk=false;else{o.sg+=r.sg;o.sp+=r.sp}
     if(r.parcial)o.parcial=true}
   return cerrar(o);
@@ -853,6 +891,59 @@ function spark(host,datos,color){
   host.appendChild(s);
 }
 
+/* Barras horizontales con la línea del 1,0 marcada: de cada juego importa de
+   qué lado de esa línea cae. Mismas specs que el resto: extremo de dato
+   redondeado, base cuadrada, grosor acotado. */
+function sendaH(x0, x1, y, alto, r=RADIO){
+  const largo=Math.max(1,x1-x0);
+  r=Math.min(r,alto/2,largo);
+  const f=x0+largo;
+  return `M${x0} ${y}L${f-r} ${y}Q${f} ${y} ${f} ${y+r}`
+       + `L${f} ${y+alto-r}Q${f} ${y+alto} ${f-r} ${y+alto}L${x0} ${y+alto}Z`;
+}
+function ranking(host,filas){
+  host.innerHTML='';
+  if(filas.length<2){
+    host.innerHTML='<p class="mini">Hacen falta al menos dos juegos con tres '
+      +'videos cada uno en la selección. Ampliá el período.</p>';return;
+  }
+  const FILA=27, h=FILA*filas.length+40;
+  const s=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  s.setAttribute('viewBox',`0 0 ${W} ${h}`);s.setAttribute('role','img');
+  const izq=170, der=78, ancho=W-izq-der;
+  const tope=Math.max(2,...filas.map(f=>f.ix||0))*1.05;
+  const px=v=>izq+Math.max(0,v)/tope*ancho;
+
+  for(const r of [1,2,4,8,16]){
+    if(r>tope)continue;
+    s.appendChild(el('line',{x1:px(r),x2:px(r),y1:22,y2:h-8,
+      class:'gl'+(r===1?' base':'')}));
+    const t=el('text',{x:px(r),y:15,class:'axl','text-anchor':'middle'});
+    t.textContent=r===1?'1,0  lo normal':r+'x';s.appendChild(t);
+  }
+  filas.forEach((f,i)=>{
+    const y=28+i*FILA, alto=14;
+    const c=f.ix>=1?PAL[2]:PAL[7];   // aqua por encima de lo normal, rojo debajo
+    s.appendChild(el('path',{d:sendaH(izq,px(f.ix),y,alto),fill:c,class:'bar'}));
+    const et=el('text',{x:izq-10,y:y+alto-2.5,class:'axl','text-anchor':'end'});
+    et.textContent=f.j.length>25?f.j.slice(0,24)+'…':f.j;s.appendChild(et);
+    const vt=el('text',{x:px(f.ix)+9,y:y+alto-2.5,class:'dlab'});
+    vt.textContent=`${fmt(f.ix,2)}x · ${f.n}v`;s.appendChild(vt);
+    const hit=el('rect',{x:0,y:y-6,width:W,height:alto+12,fill:'transparent',
+      class:'hit',role:'img',
+      'aria-label':`${f.j}: índice ${fmt(f.ix,2)}, ${f.n} videos, `
+        +`mediana ${compact(f.v)} vistas`});
+    conTip(hit,()=>cajaTip(f.j,[
+      filaTip(c,'Índice relativo',fmt(f.ix,2)+'x'),
+      filaTip(c,'Videos',String(f.n)),
+      filaTip(c,'Vistas (mediana)',compact(f.v)),
+      filaTip(c,'Su mejor video',compact(f.mejor)),
+      filaTip(c,'Vistas totales',compact(f.tot))]));
+    s.appendChild(hit);
+  });
+  host.appendChild(s);
+}
+
 /* ── 5. categorías ───────────────────────────────────────── */
 function porCategoria(){
   /* En modo A se recorta a los videos publicados en el período. En modo B no
@@ -914,7 +1005,7 @@ function render(){
 
   /* KPIs */
   $('kpis').innerHTML=METRICAS[S.modo]
-    .filter(k=>k.k!==m.k&&!(k.req==='subs'&&!TIENE_SUBS_DESGLOSE))
+    .filter(k=>k.k!==m.k&&!((k.req==='subs'&&!TIENE_SUBS_DESGLOSE)||(k.req==='ix'&&!HAY_IX)))
     .map(k=>tarjeta(k,tot,base)).join('');
 
   /* evolución */
@@ -959,6 +1050,24 @@ function render(){
   $('scatter-leg').textContent='Eje X: vistas promedio por video. Eje Y: CTR ponderado. '+
     'Arriba a la derecha = categorías que además de traer tráfico convierten la impresión en click.';
   tablaCats(cats);
+  /* qué repetir */
+  const jg=porJuego().filter(f=>f.n>=3);
+  const sec=$('juegos');
+  sec.style.display=HAY_IX?'':'none';
+  if(HAY_IX){
+    ranking($('c-juegos'),jg);
+    $('juegos-sub').textContent='Cada video se compara contra la mediana de los '
+      +'publicados a su alrededor, no contra el canal entero. Así un video de 2024 '
+      +'y uno de 2026 se pueden comparar aunque el canal haya cambiado de nivel.';
+    const arriba=jg.filter(f=>f.ix>=1.5);
+    $('juegos-nota').innerHTML=jg.length
+      ? `Solo entran juegos con 3 videos o más: ${jg.length} de ${new Set(VIDEOS.filter(v=>v.j).map(v=>v.j)).size}. `
+        + (arriba.length
+           ? `<b>${arriba.map(f=>esc(f.j)).join(', ')}</b> rinde${arriba.length>1?'n':''} muy por encima de lo normal para su época.`
+           : 'Ninguno se despega claramente de lo normal.')
+      : '';
+  }
+
   tablaDatos(filas,m);
   avisos(filas,tot);
 }
@@ -1055,14 +1164,16 @@ function tablaCats(cats){
 }
 function tablaDatos(filas,m){
   const cols=S.modo==='A'
-    ? [['k','Publicados en','l'],['n','Videos'],['v','Vistas acum.'],['vpv','Vistas/video'],['ctr','CTR acum.'],['sg','Subs ganados'],['edad','Antigüedad media']]
+    ? [['k','Publicados en','l'],['n','Videos'],['v','Vistas acum.'],['vpv','Vistas/video'],
+       ...(HAY_IX?[['ixm','Índice']]:[]),['ctr','CTR acum.'],['sg','Subs ganados'],['edad','Antigüedad media']]
     : [['k','Período','l'],['v','Vistas'],['i','Impresiones'],['ctr','CTR'],['sn','Subs netos'],
        ...(TIENE_SUBS_DESGLOSE?[['sg','Ganados'],['sp','Perdidos']]:[]),['ing','Ingresos'],['rpm','RPM']];
   $('datos-t').textContent=`${filas.length} ${S.gran==='mes'?'meses':S.gran==='quarter'?'quarters':'años'} · switch ${S.modo==='A'?'OFF':'ON'}`;
   const val=(r,k)=>k==='k'?`<td class="l">${esc(rotulo(r.k))} ${r.parcial?'<span class="tag warn">parcial</span>':''}</td>`
     :`<td class="num">${k==='ctr'?(r.ctr==null?'—':fmt(r.ctr,2)+' %')
       :k==='rpm'?(r.rpm==null?'—':'US$ '+fmt(r.rpm,2)):k==='ing'?'US$ '+fmt(r.ing,0)
-      :k==='vpv'?compact(r.vpv):k==='edad'?(r.edad==null?'—':fmt(r.edad,0)+' d')
+      :k==='vpv'?compact(r.vpv):k==='ixm'?(r.ixm==null?'—':fmt(r.ixm,2)+'x')
+      :k==='edad'?(r.edad==null?'—':fmt(r.edad,0)+' d')
       :['n','sn','sg','sp'].includes(k)?(r[k]==null?'—':fmt(r[k],0)):compact(r[k])}</td>`;
   $('t-datos').innerHTML=`<thead><tr>${cols.map(([k,t,cl])=>`<th class="${cl||''}">${t}</th>`).join('')}</tr></thead>`+
     `<tbody>${filas.map(r=>`<tr>${cols.map(([k])=>val(r,k)).join('')}</tr>`).join('')}</tbody>`;
@@ -1163,7 +1274,7 @@ function conmutadores(host,items,set,rotF){
 }
 function llenarMetricas(){
   $('s-metrica').innerHTML=METRICAS[S.modo]
-    .filter(m=>!(m.req==='subs'&&!TIENE_SUBS_DESGLOSE))
+    .filter(m=>!((m.req==='subs'&&!TIENE_SUBS_DESGLOSE)||(m.req==='ix'&&!HAY_IX)))
     .map(m=>`<option value="${m.k}">${m.t}</option>`).join('');
   if(!METRICAS[S.modo].some(m=>m.k===S.metrica))S.metrica=METRICAS[S.modo][0].k;
   $('s-metrica').value=S.metrica;

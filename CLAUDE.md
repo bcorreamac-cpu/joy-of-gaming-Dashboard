@@ -34,6 +34,7 @@ scripts/render_dashboard.py        analytics.json + plantilla -> dashboard.html
 scripts/validar.py                 ¿los datos son coherentes consigo mismos?
 scripts/guardia.py                 ¿no empeoran a los publicados?
 scripts/ctr_actualizar.py          carga el CTR semanal en data/historico/
+data/juegos.json                   juegos repetidos, para el ranking (editable)
 scripts/yt_autorizar.py            permiso de Google (se corrió una sola vez)
 ```
 
@@ -52,6 +53,10 @@ llegaron a mano o por API. Mantener esa compatibilidad al tocarlo.
 - **Los dos universos del switch nunca se mezclan.** OFF filtra por fecha de
   publicación y suma acumulados; ON filtra por fecha de la métrica. Cada KPI
   dice de cuál sale.
+- **El índice relativo es mediana, nunca promedio.** Un video viral desfigura
+  cualquier promedio: el 5 % de los videos genera el 55 % de las vistas.
+- **El índice compara contra vecinos en el tiempo, no contra meses calendario.**
+  Dos videos publicados con días de diferencia tienen que caer en la misma base.
 - **CTR = suma(clicks) ÷ suma(impresiones).** Nunca el promedio de CTR.
   Por eso el histórico guarda clicks y no porcentajes.
 - **Nada de números fijos en los chequeos.** Esto corre todas las semanas: todo
@@ -74,6 +79,21 @@ llegaron a mano o por API. Mantener esa compatibilidad al tocarlo.
   `YT_CLIENT_SECRET`, `YT_REFRESH_TOKEN`.
 
 ---
+
+## Lo que dicen los datos (sept 2026)
+
+- El canal **cae fuerte**: la mediana por video pasó de 4.260 vistas en 2024-H1
+  a 958 en 2026-H2. Por eso existe el índice relativo: sin él, toda comparación
+  histórica en vistas crudas miente.
+- **La concentración es extrema**: el 5 % de los videos genera el 55 % de las
+  vistas, y el mejor hace 75 veces la mediana. Cualquier análisis por promedio
+  simple, o cualquier corte que deje grupos de menos de ~8 videos, es ruido.
+- **Riders Republic rinde 7,3 veces lo normal** sostenido en 12 videos, y nueve
+  de esos son de 2026, el peor momento del canal: es el juego, no la época.
+  Steep 4,0x y Spider-Man 2 3,0x lo siguen de lejos.
+- Con 237 videos largos **no da para cruzar muchas dimensiones** (primera vs.
+  tercera persona, género, plataforma): los grupos quedan de 4 y un outlier
+  decide el resultado. Retomarlo con 500+ videos.
 
 ## Cosas que ya se probaron y no funcionan
 

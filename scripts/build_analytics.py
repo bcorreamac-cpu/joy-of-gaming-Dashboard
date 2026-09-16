@@ -14,8 +14,12 @@ Solo biblioteca estándar: no hace falta instalar nada.
 import csv, json, os, re, sys, unicodedata
 from datetime import date, datetime, timedelta
 from calendar import monthrange
+from statistics import median
 
 RAIZ = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+MIN_DIAS_VIDEO = 14  # antes de eso el video todavía no juntó sus vistas
+VENTANA_IX = 20      # videos vecinos que forman la base del índice relativo
+MIN_IX = 8           # con menos vecinos la mediana es un número al azar
 ENTRADA = os.path.join(RAIZ, 'data', 'entrada')
 ANIOS = ('2024', '2025', '2026')          # periodo que cubre el dashboard
 DESDE = ANIOS[0] + '-01-01'               # nada anterior entra, ni dias ni videos
@@ -103,6 +107,13 @@ def main():
 
     # ── categorías: se deducen del título ─────────────────────────────────────
     cfg = json.load(open(os.path.join(RAIZ, 'data', 'categorias.json'), encoding='utf-8'))
+    # Juegos que se repiten: sirven para saber qué conviene volver a grabar.
+    try:
+        jcfg = json.load(open(os.path.join(RAIZ, 'data', 'juegos.json'), encoding='utf-8'))
+        JUEGOS = [(n, re.compile(pt, re.I)) for n, pt in jcfg['reglas']]
+    except (OSError, ValueError, KeyError):
+        JUEGOS = []
+    dejuego = lambda t: next((n for n, pt in JUEGOS if pt.search(t or '')), None)
     REGLAS = [(c, re.compile(p, re.I)) for c, p in cfg['reglas']]
     clasificar = lambda t: next((c for c, p in REGLAS if p.search(t or '')), 'OTROS')
 
@@ -185,10 +196,25 @@ def main():
                 'lg': dur is None or dur > tope,
                 'dur': dur,
                 'edad': (corte_d - pub).days,
+                'j': dejuego(col(f, 'titulo del video', 'titulo')),
             })
     if not videos:
         sys.exit(f'Los videos_*.csv no trajeron ningún video publicado desde {DESDE}.')
     videos.sort(key=lambda v: v['pub'])
+
+    # Índice relativo: vistas del video ÷ mediana de sus vecinos en el tiempo.
+    # El canal viene cayendo, así que comparar vistas crudas entre 2024 y 2026
+    # miente: un video mediocre de 2024 le gana a uno bueno de 2026. Con este
+    # número, 1,0 es "lo normal para su época", en cualquier época.
+    # La base son vecinos y no el mes calendario, que partiría en dos a videos
+    # publicados con días de diferencia.
+    medibles = [v for v in videos if v['lg'] and v['edad'] >= MIN_DIAS_VIDEO]
+    for i, v in enumerate(medibles):
+        ini = max(0, i - VENTANA_IX // 2)
+        vecinos = [w['v'] for w in medibles[ini:ini + VENTANA_IX + 1]
+                   if w is not v and w['v'] is not None]
+        base = median(vecinos) if len(vecinos) >= MIN_IX else None
+        v['ix'] = round(v['v'] / base, 3) if base and v['v'] is not None else None
 
     # ── salida ────────────────────────────────────────────────────────────────
     salida = {
@@ -209,7 +235,8 @@ def main():
             'cat_etiquetas': cfg['_etiquetas'],
             'n_videos': len(videos),
             'n_largos': sum(1 for v in videos if v['lg']),
-            'min_dias_video': 14,
+            'min_dias_video': MIN_DIAS_VIDEO,
+            'ventana_ix': VENTANA_IX,
             'dims_extra': [],
         },
         'dias': serie,

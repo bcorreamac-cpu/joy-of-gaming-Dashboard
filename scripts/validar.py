@@ -156,6 +156,29 @@ chk(sum(cats.values()) == len(vids), "todo video tiene exactamente una categorí
 sin = cats.get('OTROS', 0)
 avisos.append(f"sin clasificar: {sin}/{len(vids)} ({sin/len(vids)*100:.1f} %)")
 
+# ── índice relativo y juegos ──────────────────────────────────────────
+con_ix = [v for v in vids if v.get('ix') is not None]
+if con_ix:
+    import statistics
+    med_ix = statistics.median(v['ix'] for v in con_ix)
+    # por construcción cada video se divide por la mediana de sus vecinos:
+    # el conjunto tiene que quedar centrado en 1
+    chk(0.8 <= med_ix <= 1.25, f"índice relativo centrado en 1: mediana {med_ix:.3f}")
+    chk(all(v['ix'] > 0 for v in con_ix), "ningún índice negativo o cero")
+    elegibles = [v for v in vids if v['lg'] and v['edad'] >= meta['min_dias_video']]
+    faltan = [v for v in elegibles if v.get('ix') is None]
+    chk(len(faltan) <= meta.get('ventana_ix', 20),
+        f"videos elegibles sin índice: {len(faltan)} (solo los de los extremos)")
+    avisos.append(f"con índice: {len(con_ix)} de {len(elegibles)} elegibles")
+
+juegos = [v['j'] for v in vids if v.get('j')]
+if juegos:
+    from collections import Counter
+    cj = Counter(juegos)
+    avisos.append(f"juegos repetidos: {len(cj)} cubriendo {len(juegos)} videos")
+    chk(all(v.get('j') is None or isinstance(v['j'], str) for v in vids),
+        "el juego es texto o nada")
+
 # ── 8. CTR ponderado ≠ promedio simple ────────────────────────────────
 ci = sum(d['c'] or 0 for d in dias); ii = sum(d['i'] or 0 for d in dias)
 con_imp = [d for d in dias if d['i']]
