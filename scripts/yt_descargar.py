@@ -33,6 +33,14 @@ ANALYTICS = 'https://youtubeanalytics.googleapis.com/v2/reports'
 DATA = 'https://www.googleapis.com/youtube/v3/'
 TOKEN = 'https://oauth2.googleapis.com/token'
 
+# Las impresiones y el CTR se expusieron en el API recién el 15/1/2026. Si por
+# lo que sea el canal no las devuelve, el pedido entero falla con un 400. Van
+# aparte para poder reintentar sin ellas: es mejor un panel sin CTR que ninguno.
+OPCIONALES = ['videoThumbnailImpressions', 'videoThumbnailImpressionsClickRate']
+M_CANAL = ['views', 'estimatedMinutesWatched', 'subscribersGained', 'subscribersLost',
+           'estimatedRevenue']
+M_VIDEO = ['views', 'subscribersGained', 'averageViewPercentage', 'averageViewDuration']
+
 CAB_CANAL = ['Fecha', 'Impresiones de miniaturas', 'Tasa de clics de las miniaturas (%)',
              'Suscriptores obtenidos', 'Suscriptores perdidos', 'RPM (USD)', 'Vistas',
              'Tiempo de reproducción (horas)', 'Ingresos estimados (USD)']
@@ -43,6 +51,12 @@ CAB_VIDEOS = ['Contenido', 'Título del video', 'Tiempo de publicación del vide
 
 
 # ── HTTP ──────────────────────────────────────────────────────────────────
+class ErrorAPI(Exception):
+    def __init__(self, codigo, cuerpo):
+        super().__init__(f'{codigo}: {cuerpo}')
+        self.codigo, self.cuerpo = codigo, cuerpo
+
+
 def get(url, params, token, intentos=4):
     """GET con reintento exponencial: 429 y 5xx son moneda corriente."""
     u = url + '?' + urllib.parse.urlencode(params, doseq=True)
@@ -56,12 +70,40 @@ def get(url, params, token, intentos=4):
             if e.code in (429, 500, 502, 503) and n < intentos - 1:
                 time.sleep(2 ** n * 2)
                 continue
-            raise SystemExit(f'{url} respondió {e.code}\n{cuerpo}')
+            raise ErrorAPI(e.code, cuerpo)
         except urllib.error.URLError as e:
             if n < intentos - 1:
                 time.sleep(2 ** n * 2)
                 continue
             raise SystemExit(f'No se pudo conectar a {url}: {e}')
+
+
+# Se resuelve en el primer pedido y vale para toda la corrida.
+HAY_CTR = None
+
+
+def consultar(token, params, metricas):
+    """Pide con las métricas opcionales; si el API las rechaza, va sin ellas.
+
+    Un 400 por métrica desconocida no se reintenta a ciegas: se cae de nuevo
+    igual. Se quitan las opcionales una sola vez y queda marcado para el resto
+    de la corrida.
+    """
+    global HAY_CTR
+    con = metricas + (OPCIONALES if HAY_CTR is not False else [])
+    try:
+        r = get(ANALYTICS, {**params, 'metrics': ','.join(con)}, token)
+        if HAY_CTR is None and OPCIONALES[0] in con:
+            HAY_CTR = True
+        return r
+    except ErrorAPI as e:
+        if e.codigo != 400 or HAY_CTR is False:
+            raise SystemExit(f'El API de Analytics respondió {e.codigo}\n{e.cuerpo}')
+        print('AVISO: el API rechazó las impresiones y el CTR. Se sigue sin '
+              'ellas; el panel va a mostrar esas columnas vacías.\n'
+              f'       Respuesta de Google: {e.cuerpo[:200]}', file=sys.stderr)
+        HAY_CTR = False
+        return get(ANALYTICS, {**params, 'metrics': ','.join(metricas)}, token)
 
 
 def token_de_acceso():
@@ -94,13 +136,9 @@ def serie_diaria(token, d0, d1):
     ini = date.fromisoformat(d0)
     while ini <= date.fromisoformat(d1):
         fin = min(date(ini.year, 12, 31), date.fromisoformat(d1))
-        r = get(ANALYTICS, {
+        r = consultar(token, {
             'ids': 'channel==MINE', 'startDate': ini.isoformat(), 'endDate': fin.isoformat(),
-            'dimensions': 'day', 'sort': 'day',
-            'metrics': ('views,estimatedMinutesWatched,subscribersGained,subscribersLost,'
-                        'estimatedRevenue,videoThumbnailImpressions,'
-                        'videoThumbnailImpressionsClickRate'),
-        }, token)
+            'dimensions': 'day', 'sort': 'day'}, M_CANAL)
         cols = [c['name'] for c in r.get('columnHeaders', [])]
         for f in r.get('rows', []):
             d = dict(zip(cols, f))
@@ -135,9 +173,16 @@ def num(v):
 
 
 # ── Data API: catálogo del canal ──────────────────────────────────────────
+def dato(url, params, token):
+    try:
+        return get(url, params, token)
+    except ErrorAPI as e:
+        raise SystemExit(f'El API de Data respondió {e.codigo}\n{e.cuerpo}')
+
+
 def catalogo(token):
     """Todos los uploads del canal con título, fecha y duración."""
-    ch = get(DATA + 'channels', {'part': 'contentDetails', 'mine': 'true'}, token)
+    ch = dato(DATA + 'channels', {'part': 'contentDetails', 'mine': 'true'}, token)
     items = ch.get('items') or []
     if not items:
         sys.exit('La cuenta autorizada no tiene un canal asociado.')
@@ -148,7 +193,7 @@ def catalogo(token):
         p = {'part': 'contentDetails,snippet', 'playlistId': subidas, 'maxResults': 50}
         if pagina:
             p['pageToken'] = pagina
-        r = get(DATA + 'playlistItems', p, token)
+        r = dato(DATA + 'playlistItems', p, token)
         for it in r.get('items', []):
             cd, sn = it['contentDetails'], it['snippet']
             pub = (cd.get('videoPublishedAt') or sn.get('publishedAt') or '')[:10]
@@ -163,7 +208,7 @@ def catalogo(token):
     # las duraciones vienen de otro endpoint, de a 50
     ids = list(vids)
     for i in range(0, len(ids), 50):
-        r = get(DATA + 'videos', {'part': 'contentDetails', 'id': ','.join(ids[i:i + 50])}, token)
+        r = dato(DATA + 'videos', {'part': 'contentDetails', 'id': ','.join(ids[i:i + 50])}, token)
         for it in r.get('items', []):
             vids[it['id']]['dur'] = iso_a_segundos(it['contentDetails'].get('duration', ''))
     return vids
@@ -184,13 +229,10 @@ def metricas_video(token, ids, d0, d1, lote=200):
     out = {}
     for i in range(0, len(ids), lote):
         trozo = ids[i:i + lote]
-        r = get(ANALYTICS, {
+        r = consultar(token, {
             'ids': 'channel==MINE', 'startDate': d0, 'endDate': d1,
             'dimensions': 'video', 'filters': 'video==' + ','.join(trozo),
-            'maxResults': len(trozo), 'sort': '-views',
-            'metrics': ('views,subscribersGained,averageViewPercentage,averageViewDuration,'
-                        'videoThumbnailImpressions,videoThumbnailImpressionsClickRate'),
-        }, token)
+            'maxResults': len(trozo), 'sort': '-views'}, M_VIDEO)
         cols = [c['name'] for c in r.get('columnHeaders', [])]
         for f in r.get('rows', []):
             d = dict(zip(cols, f))
@@ -208,19 +250,64 @@ def escribir_videos(cat, met, ruta):
             # cero real. Un promedio o un CTR ausentes, en cambio, no existen:
             # esos van vacíos, para que no se lean como "rindió 0 %".
             cero = lambda k: m.get(k) if m.get(k) is not None else 0
+            # ...salvo si el API ni siquiera expone la métrica: ahí va vacío,
+            # porque "no lo sabemos" no es "fueron cero".
+            imp = cero('videoThumbnailImpressions') if HAY_CTR else ''
             w.writerow([
                 v['id'], v['titulo'], v['pub'], num(v.get('dur')),
                 num(m.get('averageViewPercentage')),
                 cero('subscribersGained'),
                 cero('views'),
                 num(m.get('averageViewDuration')),
-                cero('videoThumbnailImpressions'),
+                imp,
                 num(m.get('videoThumbnailImpressionsClickRate')),
             ])
 
 
+# ── comprobación ──────────────────────────────────────────────────────────
+def comprobar():
+    """Un pedido chico que dice qué devuelve de verdad ESTE canal.
+
+    Las impresiones y el CTR se agregaron al API el 15/1/2026. En vez de
+    confiar en eso, se pregunta.
+    """
+    token = token_de_acceso()
+    print('Token renovado: las credenciales sirven.\n')
+
+    ayer = (date.today() - timedelta(ATRASO)).isoformat()
+    base = {'ids': 'channel==MINE', 'startDate': ayer, 'endDate': ayer, 'dimensions': 'day'}
+
+    for etq, ms in [('métricas base   ', M_CANAL[:4]),
+                    ('ingresos         ', ['estimatedRevenue']),
+                    ('impresiones y CTR', OPCIONALES)]:
+        try:
+            r = get(ANALYTICS, {**base, 'metrics': ','.join(ms)}, token)
+            cols = [c['name'] for c in r.get('columnHeaders', []) if c['name'] != 'day']
+            fila = (r.get('rows') or [[]])[0]
+            print(f'  OK    {etq}  {", ".join(cols)}')
+            if fila:
+                print(f'        {ayer}: ' + ', '.join(
+                    f'{c}={v}' for c, v in zip(cols, fila[1:])))
+        except ErrorAPI as e:
+            print(f'  FALLA {etq}  {e.codigo}')
+            print(f'        {e.cuerpo[:220]}')
+
+    try:
+        ch = get(DATA + 'channels', {'part': 'contentDetails,snippet', 'mine': 'true'}, token)
+        it = (ch.get('items') or [{}])[0]
+        print(f"\n  OK    catálogo (Data API)   canal: "
+              f"{it.get('snippet', {}).get('title', '?')}")
+    except ErrorAPI as e:
+        print(f'\n  FALLA catálogo (Data API)   {e.codigo}: {e.cuerpo[:200]}')
+
+    print('\nSi "impresiones y CTR" falla, el panel funciona igual: esas dos '
+          'columnas quedan vacías.')
+
+
 # ── main ──────────────────────────────────────────────────────────────────
 def main():
+    if '--comprobar' in sys.argv:
+        return comprobar()
     hasta = os.environ.get('YT_HASTA') or (date.today() - timedelta(ATRASO)).isoformat()
     if hasta < DESDE:
         sys.exit(f'La ventana está al revés: {DESDE} -> {hasta}')

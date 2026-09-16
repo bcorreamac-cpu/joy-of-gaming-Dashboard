@@ -78,8 +78,22 @@ métricas, Data para los títulos, fechas y duraciones.
 6. **Guardalos como secrets** en *Settings → Secrets and variables → Actions*:
    `YT_CLIENT_ID`, `YT_CLIENT_SECRET`, `YT_REFRESH_TOKEN`.
    El repo es público: nunca los pongas en un archivo.
-7. **Probalo** en la pestaña *Actions → Actualizar el panel → Run workflow*.
+7. **Comprobá que el canal devuelve todo**, antes de tocar GitHub:
+   ```
+   YT_CLIENT_ID=... YT_CLIENT_SECRET=... YT_REFRESH_TOKEN=... \
+     python3 scripts/yt_descargar.py --comprobar
+   ```
+   Hace tres pedidos chicos y dice cuáles pasan. Tarda segundos.
+8. **Probalo entero** en *Actions → Actualizar el panel → Run workflow*.
    No esperes al lunes para saber si funciona.
+
+### Impresiones y CTR
+
+Google expuso estas dos métricas en el API el **15 de enero de 2026**
+(`videoThumbnailImpressions` y `videoThumbnailImpressionsClickRate`); antes eran
+exclusivas de Studio. El descargador no da eso por sentado: las pide, y si el
+API las rechaza avisa y sigue sin ellas. El panel funciona igual, con las
+columnas de CTR vacías. El chequeo del paso 7 te lo confirma en segundos.
 
 ### Dos puertas antes de publicar
 

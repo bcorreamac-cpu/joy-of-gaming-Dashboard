@@ -89,135 +89,147 @@ def listar(patron):
     return sorted(os.path.join(ENTRADA, f) for f in os.listdir(ENTRADA)
                   if f.startswith(patron) and f.endswith('.csv'))
 
-f_canal, f_videos = listar('canal_'), listar('videos_')
-if not f_canal or not f_videos:
-    sys.exit('Faltan CSV en data/entrada/: se esperan canal_*.csv y videos_*.csv.\n'
-             'analytics.json no se modificó.')
+def main():
+    """Lee data/entrada/, escribe data/analytics.json y resume por consola.
 
-# ── categorías: se deducen del título ─────────────────────────────────────
-cfg = json.load(open(os.path.join(RAIZ, 'data', 'categorias.json'), encoding='utf-8'))
-REGLAS = [(c, re.compile(p, re.I)) for c, p in cfg['reglas']]
-clasificar = lambda t: next((c for c, p in REGLAS if p.search(t or '')), 'OTROS')
+    Va dentro de una función a propósito: validar.py importa este módulo para
+    reusar el lector de CSV, y con el cuerpo suelto el import regeneraba el
+    analytics.json que justamente venía a revisar.
+    """
+    f_canal, f_videos = listar('canal_'), listar('videos_')
+    if not f_canal or not f_videos:
+        sys.exit('Faltan CSV en data/entrada/: se esperan canal_*.csv y videos_*.csv.\n'
+                 'analytics.json no se modificó.')
 
-# ── serie diaria del canal ────────────────────────────────────────────────
-dias, vistos = {}, set()
-for ruta in f_canal:
-    for f in leer(ruta):
-        d = col(f, 'fecha')
-        if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', d.strip()):
-            continue
-        d = d.strip()
-        if d[:4] not in ANIOS or d in vistos:
-            continue            # los rangos exportados pueden solaparse
-        vistos.add(d)
-        imp, ctr = num(col(f, 'impresiones')), num(col(f, 'tasa de clics', 'ctr'))
-        dias[d] = {
-            'f': d,
-            'v': num(col(f, 'vistas')),
-            'i': imp,
-            'c': None if imp is None or ctr is None else imp * ctr / 100,
-            'sg': num(col(f, 'suscriptores obtenidos', 'suscriptores ganados')),
-            'sp': num(col(f, 'suscriptores perdidos')),
-            'ing': num(col(f, 'ingresos')),
-            'th': num(col(f, 'tiempo de reproduccion')),
-        }
-if not dias:
-    sys.exit('Los canal_*.csv no trajeron ningún día dentro de ' + '/'.join(ANIOS))
-serie = [dias[k] for k in sorted(dias)]
+    # ── categorías: se deducen del título ─────────────────────────────────────
+    cfg = json.load(open(os.path.join(RAIZ, 'data', 'categorias.json'), encoding='utf-8'))
+    REGLAS = [(c, re.compile(p, re.I)) for c, p in cfg['reglas']]
+    clasificar = lambda t: next((c for c, p in REGLAS if p.search(t or '')), 'OTROS')
 
-# YouTube tarda unos dias en cerrar los ingresos: los ultimos dias del export
-# llegan con la celda vacia. Se guardan como null, no como cero, y se avisan.
-sin_ingresos = sorted(d['f'] for d in serie if d['ing'] is None)
+    # ── serie diaria del canal ────────────────────────────────────────────────
+    dias, vistos = {}, set()
+    for ruta in f_canal:
+        for f in leer(ruta):
+            d = col(f, 'fecha')
+            if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', d.strip()):
+                continue
+            d = d.strip()
+            if d[:4] not in ANIOS or d in vistos:
+                continue            # los rangos exportados pueden solaparse
+            vistos.add(d)
+            imp, ctr = num(col(f, 'impresiones')), num(col(f, 'tasa de clics', 'ctr'))
+            dias[d] = {
+                'f': d,
+                'v': num(col(f, 'vistas')),
+                'i': imp,
+                'c': None if imp is None or ctr is None else imp * ctr / 100,
+                'sg': num(col(f, 'suscriptores obtenidos', 'suscriptores ganados')),
+                'sp': num(col(f, 'suscriptores perdidos')),
+                'ing': num(col(f, 'ingresos')),
+                'th': num(col(f, 'tiempo de reproduccion')),
+            }
+    if not dias:
+        sys.exit('Los canal_*.csv no trajeron ningún día dentro de ' + '/'.join(ANIOS))
+    serie = [dias[k] for k in sorted(dias)]
 
-# huecos: el export se parte en tramos y es fácil perder un día en el empalme
-d0, d1 = date.fromisoformat(serie[0]['f']), date.fromisoformat(serie[-1]['f'])
-esperados = {(d0 + timedelta(n)).isoformat() for n in range((d1 - d0).days + 1)}
-huecos = sorted(esperados - set(dias))
+    # YouTube tarda unos dias en cerrar los ingresos: los ultimos dias del export
+    # llegan con la celda vacia. Se guardan como null, no como cero, y se avisan.
+    sin_ingresos = sorted(d['f'] for d in serie if d['ing'] is None)
 
-# meses y semanas incompletos
-por_mes, por_sem = {}, {}
-for d in dias:
-    y, m, dd = map(int, d.split('-'))
-    por_mes.setdefault(f'{y}-{m:02d}', set()).add(dd)
-    iso = date(y, m, dd).isocalendar()
-    por_sem.setdefault(f'{iso[0]}-W{iso[1]:02d}', set()).add(d)
-meses_parciales = sorted(k for k, ds in por_mes.items()
-                         if len(ds) < monthrange(int(k[:4]), int(k[5:]))[1])
-semanas_parciales = sorted(k for k, ds in por_sem.items() if len(ds) < 7)
+    # huecos: el export se parte en tramos y es fácil perder un día en el empalme
+    d0, d1 = date.fromisoformat(serie[0]['f']), date.fromisoformat(serie[-1]['f'])
+    esperados = {(d0 + timedelta(n)).isoformat() for n in range((d1 - d0).days + 1)}
+    huecos = sorted(esperados - set(dias))
 
-# ── tabla de videos ───────────────────────────────────────────────────────
-corte = serie[-1]['f']
-corte_d = date.fromisoformat(corte)
-videos, ids = [], set()
-for ruta in f_videos:
-    for f in leer(ruta):
-        vid = col(f, 'contenido', 'video id').strip()
-        if not vid or vid in ids:
-            continue            # los tramos por año no se pisan, pero por las dudas
-        ids.add(vid)
-        pub = fecha_pub(col(f, 'tiempo de publicacion', 'fecha de publicacion'))
-        if pub is None or pub.isoformat() < DESDE:
-            continue            # fuera de la ventana del dashboard
-        # 'duracion', nunca 'duracion promedio de vistas'
-        dur = a_segundos(next((v for k, v in f.items()
-                               if k.startswith('duracion') and 'promedio' not in k), ''))
-        imp, ctr = num(col(f, 'impresiones')), num(col(f, 'tasa de clics', 'ctr'))
-        tope = SHORT_LARGO if pub.isoformat() >= SHORT_CAMBIO else SHORT_CORTO
-        videos.append({
-            'id': vid,
-            't': col(f, 'titulo del video', 'titulo'),
-            'cat': clasificar(col(f, 'titulo del video', 'titulo')),
-            'pub': pub.isoformat(),
-            'v': num(col(f, 'vistas')),
-            'i': imp,
-            'c': None if imp is None or ctr is None else imp * ctr / 100,
-            'pct': num(col(f, 'porcentaje promedio reproducido')),
-            'avd': a_segundos(next((v for k, v in f.items() if 'promedio' in k and
-                                    ('duracion' in k or 'vistas' in k)), '')),
-            'sg': num(col(f, 'suscriptores obtenidos', 'suscriptores ganados')),
-            'lg': dur is None or dur > tope,
-            'dur': dur,
-            'edad': (corte_d - pub).days,
-        })
-if not videos:
-    sys.exit(f'Los videos_*.csv no trajeron ningún video publicado desde {DESDE}.')
-videos.sort(key=lambda v: v['pub'])
+    # meses y semanas incompletos
+    por_mes, por_sem = {}, {}
+    for d in dias:
+        y, m, dd = map(int, d.split('-'))
+        por_mes.setdefault(f'{y}-{m:02d}', set()).add(dd)
+        iso = date(y, m, dd).isocalendar()
+        por_sem.setdefault(f'{iso[0]}-W{iso[1]:02d}', set()).add(d)
+    meses_parciales = sorted(k for k, ds in por_mes.items()
+                             if len(ds) < monthrange(int(k[:4]), int(k[5:]))[1])
+    semanas_parciales = sorted(k for k, ds in por_sem.items() if len(ds) < 7)
 
-# ── salida ────────────────────────────────────────────────────────────────
-salida = {
-    'meta': {
-        'corte': corte,
-        'generado': date.today().isoformat(),
-        'anios': list(ANIOS),
-        'granularidad': 'dia',
-        'meses_parciales': meses_parciales,
-        'semanas_parciales': semanas_parciales,
-        'dias_faltantes': huecos,
-        'dias_sin_ingresos': sin_ingresos,
-        # metricas_video.csv trae acumulados sin fecha: no se puede aislar
-        # "vistas ocurridas en el periodo" video por video.
-        'video_serie_temporal': False,
-        'ventana_videos': [serie[0]['f'][:4], corte[:4]],
-        'cat_inferida': True,          # la categoria sale del titulo, no del export
-        'cat_etiquetas': cfg['_etiquetas'],
-        'n_videos': len(videos),
-        'n_largos': sum(1 for v in videos if v['lg']),
-        'min_dias_video': 14,
-        'dims_extra': [],
-    },
-    'dias': serie,
-    'videos': videos,
-}
-json.dump(salida, open(os.path.join(RAIZ, 'data', 'analytics.json'), 'w'),
-          ensure_ascii=False)
+    # ── tabla de videos ───────────────────────────────────────────────────────
+    corte = serie[-1]['f']
+    corte_d = date.fromisoformat(corte)
+    videos, ids = [], set()
+    for ruta in f_videos:
+        for f in leer(ruta):
+            vid = col(f, 'contenido', 'video id').strip()
+            if not vid or vid in ids:
+                continue            # los tramos por año no se pisan, pero por las dudas
+            ids.add(vid)
+            pub = fecha_pub(col(f, 'tiempo de publicacion', 'fecha de publicacion'))
+            if pub is None or pub.isoformat() < DESDE:
+                continue            # fuera de la ventana del dashboard
+            # 'duracion', nunca 'duracion promedio de vistas'
+            dur = a_segundos(next((v for k, v in f.items()
+                                   if k.startswith('duracion') and 'promedio' not in k), ''))
+            imp, ctr = num(col(f, 'impresiones')), num(col(f, 'tasa de clics', 'ctr'))
+            tope = SHORT_LARGO if pub.isoformat() >= SHORT_CAMBIO else SHORT_CORTO
+            videos.append({
+                'id': vid,
+                't': col(f, 'titulo del video', 'titulo'),
+                'cat': clasificar(col(f, 'titulo del video', 'titulo')),
+                'pub': pub.isoformat(),
+                'v': num(col(f, 'vistas')),
+                'i': imp,
+                'c': None if imp is None or ctr is None else imp * ctr / 100,
+                'pct': num(col(f, 'porcentaje promedio reproducido')),
+                'avd': a_segundos(next((v for k, v in f.items() if 'promedio' in k and
+                                        ('duracion' in k or 'vistas' in k)), '')),
+                'sg': num(col(f, 'suscriptores obtenidos', 'suscriptores ganados')),
+                'lg': dur is None or dur > tope,
+                'dur': dur,
+                'edad': (corte_d - pub).days,
+            })
+    if not videos:
+        sys.exit(f'Los videos_*.csv no trajeron ningún video publicado desde {DESDE}.')
+    videos.sort(key=lambda v: v['pub'])
 
-print("analytics.json")
-print(f"  días   : {len(serie)} ({serie[0]['f']} → {corte})"
-      + (f"  ¡{len(huecos)} faltantes!" if huecos else "  sin huecos"))
-print(f"  videos : {len(videos)} ({salida['meta']['n_largos']} largos, "
-      f"{len(videos) - salida['meta']['n_largos']} shorts)")
-print(f"  meses incompletos  : {meses_parciales or 'ninguno'}")
-if sin_ingresos:
-    print(f"  sin ingresos aun   : {len(sin_ingresos)} días ({sin_ingresos[0]} → {sin_ingresos[-1]})")
-sin = sum(1 for v in videos if v['cat'] == 'OTROS')
-print(f"  sin clasificar     : {sin} videos ({sin / len(videos) * 100:.1f} %)")
+    # ── salida ────────────────────────────────────────────────────────────────
+    salida = {
+        'meta': {
+            'corte': corte,
+            'generado': date.today().isoformat(),
+            'anios': list(ANIOS),
+            'granularidad': 'dia',
+            'meses_parciales': meses_parciales,
+            'semanas_parciales': semanas_parciales,
+            'dias_faltantes': huecos,
+            'dias_sin_ingresos': sin_ingresos,
+            # metricas_video.csv trae acumulados sin fecha: no se puede aislar
+            # "vistas ocurridas en el periodo" video por video.
+            'video_serie_temporal': False,
+            'ventana_videos': [serie[0]['f'][:4], corte[:4]],
+            'cat_inferida': True,          # la categoria sale del titulo, no del export
+            'cat_etiquetas': cfg['_etiquetas'],
+            'n_videos': len(videos),
+            'n_largos': sum(1 for v in videos if v['lg']),
+            'min_dias_video': 14,
+            'dims_extra': [],
+        },
+        'dias': serie,
+        'videos': videos,
+    }
+    json.dump(salida, open(os.path.join(RAIZ, 'data', 'analytics.json'), 'w'),
+              ensure_ascii=False)
+
+    print("analytics.json")
+    print(f"  días   : {len(serie)} ({serie[0]['f']} → {corte})"
+          + (f"  ¡{len(huecos)} faltantes!" if huecos else "  sin huecos"))
+    print(f"  videos : {len(videos)} ({salida['meta']['n_largos']} largos, "
+          f"{len(videos) - salida['meta']['n_largos']} shorts)")
+    print(f"  meses incompletos  : {meses_parciales or 'ninguno'}")
+    if sin_ingresos:
+        print(f"  sin ingresos aun   : {len(sin_ingresos)} días ({sin_ingresos[0]} → {sin_ingresos[-1]})")
+    sin = sum(1 for v in videos if v['cat'] == 'OTROS')
+    print(f"  sin clasificar     : {sin} videos ({sin / len(videos) * 100:.1f} %)")
+
+
+
+if __name__ == '__main__':
+    main()

@@ -67,17 +67,32 @@ mal = [v['id'] for v in vids if v['c'] and v['i'] and v['c'] > v['i']]
 chk(not mal, f"videos con clicks > impresiones: {len(mal)}")
 
 # nulos
-for c in ('v','i','sg','sp'):
+for c in ('v','sg','sp'):
     n = sum(1 for d in dias if d[c] is None)
     chk(n == 0, f"días con {c} nulo: {n}")
+
+# Impresiones y CTR: el API los expone desde enero 2026 y el descargador sigue
+# adelante sin ellos si los rechaza. Que falten en TODOS los días es un modo
+# degradado conocido; que falten en algunos es un agujero de verdad.
+sin_imp = sum(1 for d in dias if d['i'] is None)
+if sin_imp == len(dias):
+    avisos.append(f"ningún día trae impresiones ({len(dias)}): el panel queda sin CTR")
+else:
+    chk(sin_imp == 0, f"días con impresiones nulas: {sin_imp} de {len(dias)}")
 nulo_ing = sorted(d['f'] for d in dias if d['ing'] is None)
 chk(nulo_ing == meta['dias_sin_ingresos'],
     f"días sin ingresos liquidados: {nulo_ing or 'ninguno'} (declarados en meta)")
 chk(all(f > dias[-30]['f'] for f in nulo_ing),
     "los días sin ingresos son los últimos del export, no huecos sueltos")
-for c in ('v','i','sg'):
+for c in ('v','sg'):
     n = sum(1 for v in vids if v[c] is None)
     chk(n == 0, f"videos con {c} nulo: {n}")
+# misma regla que en los días: todo o nada
+sin_iv = sum(1 for v in vids if v['i'] is None)
+if sin_iv == len(vids):
+    avisos.append(f"ningún video trae impresiones ({len(vids)})")
+else:
+    chk(sin_iv == 0, f"videos con impresiones nulas: {sin_iv} de {len(vids)}")
 
 # ── 4. contra las filas "Total" de los propios exports ────────────────
 def totales(patron, campos):
@@ -143,10 +158,14 @@ avisos.append(f"sin clasificar: {sin}/{len(vids)} ({sin/len(vids)*100:.1f} %)")
 
 # ── 8. CTR ponderado ≠ promedio simple ────────────────────────────────
 ci = sum(d['c'] or 0 for d in dias); ii = sum(d['i'] or 0 for d in dias)
-pond = ci/ii*100
-simple = sum((d['c']/d['i']*100) for d in dias if d['i'])/sum(1 for d in dias if d['i'])
-avisos.append(f"CTR canal ponderado {pond:.3f} % (promedio simple daría {simple:.3f} %)")
-chk(0 < pond < 100, "CTR del canal en rango")
+con_imp = [d for d in dias if d['i']]
+if not con_imp:
+    avisos.append("sin impresiones: no hay CTR que chequear")
+else:
+    pond = ci/ii*100
+    simple = sum(d['c']/d['i']*100 for d in con_imp)/len(con_imp)
+    avisos.append(f"CTR canal ponderado {pond:.3f} % (promedio simple daría {simple:.3f} %)")
+    chk(0 < pond < 100, "CTR del canal en rango")
 
 print('\n'.join('  ok   · '+m for m in avisos))
 if fallos:
