@@ -236,9 +236,10 @@ def catalogo(token):
                  'La cuenta autorizada no tiene un canal asociado.')
     subidas = items[0]['contentDetails']['relatedPlaylists']['uploads']
 
-    vids, pagina = {}, None
+    vids, pagina, ocultos = {}, None, 0
     while True:
-        p = {'part': 'contentDetails,snippet', 'playlistId': subidas, 'maxResults': 50}
+        p = {'part': 'contentDetails,snippet,status', 'playlistId': subidas,
+             'maxResults': 50}
         if pagina:
             p['pageToken'] = pagina
         r = dato(DATA + 'playlistItems', p, token)
@@ -247,12 +248,20 @@ def catalogo(token):
             pub = (cd.get('videoPublishedAt') or sn.get('publishedAt') or '')[:10]
             if not pub or pub < DESDE:
                 continue                    # fuera de la ventana del dashboard
+            # Con el token del dueño la playlist trae también borradores,
+            # privados y no listados. Nunca tuvieron audiencia: entrarían con
+            # cero vistas y hundirían todos los promedios.
+            if it.get('status', {}).get('privacyStatus') != 'public':
+                ocultos += 1
+                continue
             vids[cd['videoId']] = {'id': cd['videoId'], 'titulo': sn.get('title', ''),
                                    'pub': pub}
         pagina = r.get('nextPageToken')
         if not pagina:
             break
 
+    if ocultos:
+        print(f'  ({ocultos} videos privados o no listados quedaron fuera)')
     if not vids:
         sys.exit(
             f'La playlist de uploads ({subidas}) no devolvió ningún video '
@@ -397,14 +406,14 @@ def comprobar():
             print(f"  OK    catálogo   canal: {it.get('snippet', {}).get('title', '?')}"
                   f"  ({it.get('id')})")
             r = get(DATA + 'playlistItems',
-                    {'part': 'contentDetails,snippet', 'playlistId': subidas,
-                     'maxResults': 5}, token)
+                    {'part': 'contentDetails,snippet,status', 'playlistId': subidas,
+                     'maxResults': 10}, token)
             tot = r.get('pageInfo', {}).get('totalResults')
             print(f'        playlist de uploads: {subidas} · {tot} videos en total')
-            for x in r.get('items', [])[:3]:
-                cd = x['contentDetails']
+            for x in r.get('items', [])[:5]:
+                cd, est = x['contentDetails'], x.get('status', {}).get('privacyStatus', '?')
                 print(f"        {(cd.get('videoPublishedAt') or '?')[:10]}  "
-                      f"{x['snippet'].get('title', '')[:56]}")
+                      f"[{est:8}] {x['snippet'].get('title', '')[:46]}")
             if not r.get('items'):
                 print('        VACÍA. Si el canal es una cuenta de marca, hay que '
                       'autorizar con esa cuenta, no con la personal.')
