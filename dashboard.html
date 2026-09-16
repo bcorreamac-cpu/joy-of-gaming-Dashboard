@@ -1,0 +1,836 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Joy Of Gaming · Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#07090f;--panel:#0e121b;--panel2:#141a26;--line:#1f2736;--line2:#2a3446;
+  --ink:#eef1f8;--ink2:#aab2c5;--muted:#6f7a93;
+  --accent:#4d8dff;--accent-soft:rgba(77,141,255,.13);--glow:rgba(77,141,255,.35);
+  --modoA:#c07cff;--modoA-soft:rgba(192,124,255,.13);--modoA-line:rgba(192,124,255,.5);
+  --modoB:#4d8dff;--modoB-soft:rgba(77,141,255,.13);--modoB-line:rgba(77,141,255,.5);
+  --good:#3ddc97;--good-bg:rgba(61,220,151,.1);--bad:#ff5d6c;--bad-bg:rgba(255,93,108,.1);
+  --warn:#f5b84b;--warn-bg:rgba(245,184,75,.1);
+  --display:"Chakra Petch","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --mode:var(--modoB);--mode-soft:var(--modoB-soft);--mode-line:var(--modoB-line);
+}
+[data-modo="A"]{--mode:var(--modoA);--mode-soft:var(--modoA-soft);--mode-line:var(--modoA-line)}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font:14px/1.55 var(--body);margin:0;padding:0 16px 64px;
+  background-image:radial-gradient(1200px 500px at 85% -120px,var(--mode-soft),transparent 70%);
+  background-repeat:no-repeat;transition:background-image .3s}
+.wrap{max-width:1280px;margin:0 auto}
+h1{font:700 clamp(24px,3vw,34px)/1.05 var(--display);margin:0;letter-spacing:-.01em;text-transform:uppercase}
+h2{font:600 19px var(--display);margin:0;letter-spacing:.01em}
+h3{font:600 13px var(--display);margin:0;letter-spacing:.03em;color:var(--ink2);text-transform:uppercase}
+.eyebrow{font:500 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mode)}
+
+/* ── barra superior ─────────────────────────────────────── */
+.top{position:sticky;top:0;z-index:30;margin-inline:-16px;padding:10px 16px;
+  background:rgba(7,9,15,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.mark{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;
+  background:linear-gradient(135deg,#1b3a7a,var(--mode));box-shadow:0 0 18px var(--glow);flex:none}
+.mark svg{width:15px;height:15px}
+.brand b{font:700 15px var(--display);letter-spacing:.04em;text-transform:uppercase}
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.chip{font:500 11px var(--mono);color:var(--ink2);border:1px solid var(--line2);border-radius:99px;padding:3px 9px;white-space:nowrap}
+.chip b{color:var(--ink);font-weight:500}
+.chip.on{border-color:var(--mode);color:var(--ink);background:var(--mode-soft)}
+
+/* ── panel de control ───────────────────────────────────── */
+.ctrl{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:18px}
+.ctrl-row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+.fld{display:flex;flex-direction:column;gap:7px;min-width:0}
+.fld>label{font:500 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}
+.seg button{font:600 12px var(--body);color:var(--ink2);background:none;border:0;border-radius:6px;
+  padding:6px 12px;cursor:pointer;white-space:nowrap;transition:.15s}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--mode);color:#07090f}
+.seg.modo button[aria-pressed="true"][data-v="A"]{background:var(--modoA)}
+.seg.modo button[aria-pressed="true"][data-v="B"]{background:var(--modoB)}
+.toggles{display:flex;gap:6px;flex-wrap:wrap}
+.tg{font:500 12px var(--mono);color:var(--ink2);background:var(--panel2);border:1px solid var(--line);
+  border-radius:7px;padding:5px 11px;cursor:pointer;transition:.15s}
+.tg:hover{border-color:var(--line2);color:var(--ink)}
+.tg[aria-pressed="true"]{background:var(--mode-soft);border-color:var(--mode);color:var(--ink)}
+select,input[type=date]{font:500 12.5px var(--body);color:var(--ink);background:var(--panel2);
+  border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+select:focus-visible,input:focus-visible,.tg:focus-visible,.seg button:focus-visible{outline:2px solid var(--mode);outline-offset:1px}
+.link{background:none;border:0;color:var(--mode);font:500 11.5px var(--body);cursor:pointer;padding:0;text-decoration:underline}
+
+/* ── avisos ─────────────────────────────────────────────── */
+.note{display:flex;gap:11px;border-radius:11px;padding:12px 14px;margin-top:14px;font-size:13px;line-height:1.5}
+.note .ic{flex:none;width:19px;height:19px;border-radius:5px;display:grid;place-items:center;
+  font:700 12px var(--display);margin-top:1px}
+.note.warn{background:var(--warn-bg);border:1px solid rgba(245,184,75,.3)}
+.note.warn .ic{background:var(--warn);color:#07090f}
+.note.info{background:var(--mode-soft);border:1px solid var(--mode-line)}
+.note.info .ic{background:var(--mode);color:#07090f}
+.note b{color:var(--ink)}
+.note code{font:500 12px var(--mono);background:rgba(255,255,255,.07);padding:1px 5px;border-radius:4px}
+
+/* ── secciones y paneles ────────────────────────────────── */
+section{margin-top:34px;scroll-margin-top:70px}
+.sh{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:14px}
+.sh .sub{color:var(--ink2);font-size:12.5px;margin:0;max-width:62ch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px}
+.ph{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
+.grid{display:grid;gap:13px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+
+/* ── KPI ────────────────────────────────────────────────── */
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:14px 15px;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--mode);opacity:.75}
+.kpi .k-t{font:500 10.5px var(--mono);letter-spacing:.11em;text-transform:uppercase;color:var(--muted)}
+.kpi .k-v{font:700 27px/1.1 var(--display);margin:7px 0 9px;letter-spacing:-.01em}
+.kpi .k-v small{font:500 14px var(--display);color:var(--ink2)}
+.deltas{display:flex;gap:6px;flex-wrap:wrap}
+.d{font:500 11px var(--mono);border-radius:6px;padding:2px 7px;white-space:nowrap}
+.d.up{background:var(--good-bg);color:var(--good)}
+.d.dn{background:var(--bad-bg);color:var(--bad)}
+.d.flat{background:var(--panel2);color:var(--ink2)}
+.kpi .k-f{font-size:11.5px;color:var(--muted);margin-top:9px;line-height:1.4}
+
+/* ── charts ─────────────────────────────────────────────── */
+.chart{width:100%;position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.gl{stroke:var(--line);stroke-width:1}
+.axl{font:500 10px var(--mono);fill:var(--muted)}
+.bar{transition:opacity .12s}
+.bar:hover{opacity:.75}
+.dot{transition:r .12s}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font:500 11.5px var(--mono);color:var(--ink2);margin-top:9px}
+.legend i{width:11px;height:3px;border-radius:2px;display:inline-block;margin-right:6px;vertical-align:middle}
+.legend .sq{width:10px;height:10px;border-radius:3px}
+.tip{position:absolute;pointer-events:none;z-index:20;background:#070a11;border:1px solid var(--line2);
+  border-radius:9px;padding:9px 11px;font:500 11.5px var(--mono);color:var(--ink);
+  box-shadow:0 10px 30px rgba(0,0,0,.6);white-space:nowrap;opacity:0;transition:opacity .1s}
+.tip.on{opacity:1}
+.tip .tt{color:var(--muted);font-size:10px;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px}
+.tip .tr{display:flex;justify-content:space-between;gap:14px}
+.tip .tr b{font-weight:600}
+
+/* ── tablas ─────────────────────────────────────────────── */
+.tw{overflow-x:auto;margin:0 -15px;padding:0 15px}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:620px}
+th,td{padding:8px 9px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font:500 10px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  position:sticky;top:0;background:var(--panel);cursor:pointer;user-select:none}
+th:hover{color:var(--ink)}
+th[aria-sort] {color:var(--mode)}
+th.l,td.l{text-align:left}
+tbody tr:hover{background:var(--panel2)}
+td.num{font:500 12.5px var(--mono)}
+.tag{font:500 10.5px var(--mono);border:1px solid var(--line2);border-radius:5px;padding:1px 6px;color:var(--ink2)}
+.tag.warn{border-color:rgba(245,184,75,.45);color:var(--warn)}
+.sbar{height:5px;border-radius:3px;background:var(--mode);opacity:.8;min-width:2px}
+.mini{font-size:11px;color:var(--muted)}
+footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+footer ul{margin:10px 0 0;padding-left:18px}
+footer li{margin-bottom:6px;line-height:1.5}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:640px){.ctrl-row{gap:16px}.kpi .k-v{font-size:23px}}
+</style>
+</head>
+<body>
+
+
+<div class="top">
+  <div class="wrap">
+    <div class="brand" style="display:flex;align-items:center;gap:9px">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span>
+      <b>Joy of Gaming</b>
+    </div>
+    <div class="chips" id="topchips"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header style="padding:26px 0 4px">
+    <div class="eyebrow" id="hero-eyebrow">Analytics</div>
+    <h1>Panel de análisis</h1>
+    <p class="sh sub" style="margin:9px 0 0;max-width:64ch;color:var(--ink2)">
+      Evolución del canal desde 2024. Elegí el período, cambiá de modo de análisis
+      y compará años, trimestres, meses o categorías.
+    </p>
+  </header>
+
+  <!-- ── controles ── -->
+  <div class="ctrl">
+    <div class="ctrl-row">
+      <div class="fld">
+        <label id="l-modo">Modo de análisis</label>
+        <div class="seg modo" role="group" aria-labelledby="l-modo" id="s-modo">
+          <button data-v="B" aria-pressed="true">B · Performance del canal</button>
+          <button data-v="A" aria-pressed="false">A · Contenido publicado</button>
+        </div>
+      </div>
+      <div class="fld">
+        <label id="l-gran">Agrupar por</label>
+        <div class="seg" role="group" aria-labelledby="l-gran" id="s-gran">
+          <button data-v="mes" aria-pressed="true">Mes</button>
+          <button data-v="quarter" aria-pressed="false">Quarter</button>
+          <button data-v="anio" aria-pressed="false">Año</button>
+        </div>
+      </div>
+      <div class="fld">
+        <label id="l-comp">Comparar contra</label>
+        <select id="s-comp" aria-labelledby="l-comp">
+          <option value="prev">Período anterior</option>
+          <option value="yoy">Mismo período, año anterior</option>
+          <option value="none">Sin comparación</option>
+        </select>
+      </div>
+      <div class="fld" style="flex:1;min-width:210px">
+        <label for="s-metrica">Métrica del gráfico</label>
+        <select id="s-metrica"></select>
+      </div>
+    </div>
+
+    <div class="ctrl-row" style="margin-top:16px;padding-top:15px;border-top:1px solid var(--line)">
+      <div class="fld">
+        <label id="l-anios">Años</label>
+        <div class="toggles" id="t-anios" role="group" aria-labelledby="l-anios"></div>
+      </div>
+      <div class="fld">
+        <label id="l-q">Quarters</label>
+        <div class="toggles" id="t-q" role="group" aria-labelledby="l-q"></div>
+      </div>
+      <div class="fld" style="flex:1">
+        <label id="l-meses">Meses</label>
+        <div class="toggles" id="t-meses" role="group" aria-labelledby="l-meses"></div>
+      </div>
+      <div class="fld">
+        <label>&nbsp;</label>
+        <button class="link" id="b-reset">Restablecer filtros</button>
+      </div>
+    </div>
+    <div id="avisos"></div>
+  </div>
+
+  <!-- ── KPIs ── -->
+  <section id="kpis-sec">
+    <div class="sh">
+      <div><div class="eyebrow">01 · Indicadores</div><h2 id="kpi-h">Resumen del período</h2></div>
+      <p class="sub" id="kpi-sub"></p>
+    </div>
+    <div class="grid kpis" id="kpis"></div>
+  </section>
+
+  <!-- ── evolución ── -->
+  <section id="evo">
+    <div class="sh">
+      <div><div class="eyebrow">02 · Serie temporal</div><h2>Evolución</h2></div>
+      <p class="sub" id="evo-sub"></p>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3 id="evo-t">Evolución</h3>
+        <div class="seg" role="group" aria-label="Tipo de gráfico" id="s-tipo">
+          <button data-v="linea" aria-pressed="true">Línea</button>
+          <button data-v="barra" aria-pressed="false">Barras</button>
+          <button data-v="overlay" aria-pressed="false">Superponer años</button>
+        </div>
+      </div>
+      <div class="chart" id="c-evo"></div>
+      <div class="legend" id="evo-leg"></div>
+    </div>
+    <div class="grid g2" style="margin-top:13px">
+      <div class="panel"><div class="ph"><h3>Suscriptores</h3><span class="mini" id="subs-note"></span></div>
+        <div class="chart" id="c-subs"></div><div class="legend" id="subs-leg"></div></div>
+      <div class="panel"><div class="ph"><h3>CTR ponderado</h3><span class="mini">clicks ÷ impresiones</span></div>
+        <div class="chart" id="c-ctr"></div></div>
+    </div>
+  </section>
+
+  <!-- ── comparación ── -->
+  <section id="comp">
+    <div class="sh">
+      <div><div class="eyebrow">03 · Comparación</div><h2>Períodos enfrentados</h2></div>
+      <p class="sub" id="comp-sub"></p>
+    </div>
+    <div class="panel"><div class="chart" id="c-comp"></div><div class="legend" id="comp-leg"></div></div>
+  </section>
+
+  <!-- ── categorías ── -->
+  <section id="cats">
+    <div class="sh">
+      <div><div class="eyebrow">04 · Contenido</div><h2>Performance por categoría</h2></div>
+      <p class="sub" id="cats-sub"></p>
+    </div>
+    <div class="grid g2">
+      <div class="panel"><div class="ph"><h3>Participación de vistas</h3><span class="mini" id="share-n"></span></div>
+        <div class="chart" id="c-share"></div></div>
+      <div class="panel"><div class="ph"><h3>Volumen vs. eficiencia</h3><span class="mini">burbuja = nº de videos</span></div>
+        <div class="chart" id="c-scatter"></div>
+        <p class="mini" style="margin:9px 0 0" id="scatter-leg"></p></div>
+    </div>
+    <div class="panel" style="margin-top:13px">
+      <div class="ph"><h3>Detalle por categoría</h3>
+        <button class="link" id="b-exp-cat">Exportar CSV</button></div>
+      <div class="tw"><table id="t-cats"></table></div>
+    </div>
+  </section>
+
+  <!-- ── datos ── -->
+  <section id="datos">
+    <div class="sh">
+      <div><div class="eyebrow">05 · Datos</div><h2>Tabla del período</h2></div>
+      <p class="sub">Los números detrás de cada gráfico. Ordená por cualquier columna.</p>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3 id="datos-t">Serie</h3><button class="link" id="b-exp-datos">Exportar CSV</button></div>
+      <div class="tw"><table id="t-datos"></table></div>
+    </div>
+  </section>
+
+  <footer>
+    <b style="color:var(--ink2)">Reglas de cálculo</b>
+    <ul id="metodo"></ul>
+  </footer>
+</div>
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+<script>
+const D={"meta": {"corte": "2026-09-13", "generado": "2026-09-16", "anios": ["2024", "2025", "2026"], "granularidad": "mes", "meses_parciales": ["2026-09"], "semanas_parciales": [], "video_serie_temporal": false, "dims_extra": [], "n_videos": 30, "n_videos_canal": 401, "min_dias_video": 14, "parcial": true, "ventana_videos": ["2023", "2026"]}, "periodos": [{"p": "2024-01", "v": 2398547, "i": 29672325, "c": 1912185.0, "sn": 3189, "sg": null, "sp": null, "ing": 2370.682}, {"p": "2024-02", "v": 1666571, "i": 20705858, "c": 1315650.0, "sn": 1942, "sg": null, "sp": null, "ing": 1819.5240000000001}, {"p": "2024-03", "v": 1270863, "i": 13812089, "c": 990277.0, "sn": 1485, "sg": null, "sp": null, "ing": 1514.079}, {"p": "2024-04", "v": 1111356, "i": 12550283, "c": 867637.0000000001, "sn": 1211, "sg": null, "sp": null, "ing": 1187.911}, {"p": "2024-05", "v": 1109129, "i": 12834617, "c": 873025.0, "sn": 1328, "sg": null, "sp": null, "ing": 1197.679}, {"p": "2024-06", "v": 1045976, "i": 12005954, "c": 822424.0, "sn": 1213, "sg": null, "sp": null, "ing": 1163.824}, {"p": "2024-07", "v": 1003238, "i": 11005401, "c": 790686.0000000001, "sn": 1087, "sg": null, "sp": null, "ing": 1010.2919999999999}, {"p": "2024-08", "v": 915065, "i": 10140756, "c": 731156.0000000001, "sn": 1120, "sg": null, "sp": null, "ing": 941.516}, {"p": "2024-09", "v": 946187, "i": 10793648, "c": 747063.0, "sn": 1052, "sg": null, "sp": null, "ing": 1128.3239999999998}, {"p": "2024-10", "v": 936140, "i": 11143703, "c": 734697.0, "sn": 1023, "sg": null, "sp": null, "ing": 1244.5320000000002}, {"p": "2024-11", "v": 974205, "i": 11735154, "c": 763514.0, "sn": 1460, "sg": null, "sp": null, "ing": 1368.59}, {"p": "2024-12", "v": 961631, "i": 10653815, "c": 756350.0, "sn": 1479, "sg": null, "sp": null, "ing": 1322.804}, {"p": "2025-01", "v": 992483, "i": 11110944, "c": 789840.0, "sn": 1462, "sg": null, "sp": null, "ing": 874.6229999999998}, {"p": "2025-02", "v": 856488, "i": 9674286, "c": 689594.0, "sn": 1422, "sg": null, "sp": null, "ing": 862.186}, {"p": "2025-03", "v": 779738, "i": 8379075, "c": 622722.0, "sn": 915, "sg": null, "sp": null, "ing": 844.4230000000002}, {"p": "2025-04", "v": 549865, "i": 5499857, "c": 437104.0, "sn": 757, "sg": null, "sp": null, "ing": 581.7709999999998}, {"p": "2025-05", "v": 586315, "i": 5717701, "c": 464716.0, "sn": 662, "sg": null, "sp": null, "ing": 600.813}, {"p": "2025-06", "v": 722623, "i": 7802454, "c": 568651.0, "sn": 967, "sg": null, "sp": null, "ing": 817.924}, {"p": "2025-07", "v": 600897, "i": 6144392, "c": 463016.0, "sn": 700, "sg": null, "sp": null, "ing": 590.629}, {"p": "2025-08", "v": 513395, "i": 5408287, "c": 393788.0, "sn": 687, "sg": 1451, "sp": 764, "ing": 521.0409999999999}, {"p": "2025-09", "v": 475993, "i": 5519789, "c": 362602.0, "sn": 562, "sg": null, "sp": null, "ing": 549.209}, {"p": "2025-10", "v": 447326, "i": 4433529, "c": 341748.0, "sn": 485, "sg": null, "sp": null, "ing": 521.5370000000001}, {"p": "2025-11", "v": 431022, "i": 4031099, "c": 335883.0, "sn": 373, "sg": null, "sp": null, "ing": 611.084}, {"p": "2025-12", "v": 568921, "i": 6111701, "c": 440323.0, "sn": 503, "sg": null, "sp": null, "ing": 748.234}, {"p": "2026-01", "v": 652311, "i": 7122161, "c": 499789.0, "sn": 437, "sg": null, "sp": null, "ing": 577.769}, {"p": "2026-02", "v": 465806, "i": 4654977, "c": 351424.0, "sn": 163, "sg": null, "sp": null, "ing": 483.087}, {"p": "2026-03", "v": 440583, "i": 4358594, "c": 336107.0, "sn": 130, "sg": null, "sp": null, "ing": 502.149}, {"p": "2026-04", "v": 480374, "i": 5123291, "c": 357784.0, "sn": 131, "sg": null, "sp": null, "ing": 479.0059999999999}, {"p": "2026-05", "v": 854238, "i": 10127511, "c": 659362.0, "sn": 979, "sg": null, "sp": null, "ing": 980.314}, {"p": "2026-06", "v": 751855, "i": 8088178, "c": 582224.9999999999, "sn": 615, "sg": null, "sp": null, "ing": 758.3840000000001}, {"p": "2026-07", "v": 698583, "i": 7426775, "c": 542985.0, "sn": 480, "sg": 1271, "sp": 791, "ing": 573.8410000000001}, {"p": "2026-08", "v": 511823, "i": 4532420, "c": 352213.0, "sn": 39, "sg": 792, "sp": 753, "ing": 388.74100000000004}], "videos": [{"id": "HApXIhAUCdw", "t": "The NEW RIDE 5 is literally REAL LIFE... It just BLOWS MY MIND", "cat": "RACING_MOTOR", "pub": "2023-09-10", "v": 123710, "i": 667740, "c": 98275.6247, "pct": 11.54, "avd": null, "sg": 87, "lg": true, "edad": null}, {"id": "giQy-5NvCHc", "t": "This NEW REALISTIC Tennis Playstation VR2 Game is actually SUPER FUN... | Tennis On-Court Gameplay", "cat": "OTROS", "pub": "2023-10-16", "v": 43066, "i": 250340, "c": 36205.6321, "pct": 12.98, "avd": null, "sg": 27, "lg": true, "edad": null}, {"id": "uQ43hEk0il4", "t": "This PS5 game is literally more realistic than real life...", "cat": "OTROS", "pub": "2023-03-25", "v": 535617, "i": 3532283, "c": 430492.4789, "pct": 11.68, "avd": null, "sg": 589, "lg": true, "edad": null}, {"id": "Am9OQbzaCW8", "t": "The Witcher 3 PS5 NEXT GEN Gameplay | Ultra High Graphics [4K HDR 60 FPS]", "cat": "MUNDO_ABIERTO_RPG", "pub": "2023-07-01", "v": 64867, "i": 332811, "c": 40485.2405, "pct": 9.42, "avd": null, "sg": 30, "lg": true, "edad": null}, {"id": "us60lnZ7CGQ", "t": "(PS5) Marvel's Avengers CAPTAIN AMERICA Gameplay [4K HDR 60 FPS]", "cat": "ACCION_AVENTURA", "pub": "2023-01-07", "v": 934700, "i": 6609661, "c": 774878.8866, "pct": 12.25, "avd": null, "sg": 1001, "lg": true, "edad": null}, {"id": "M35v023DAWk", "t": "(PS5) ACE COMBAT 7 INTENSE FIGHT Gameplay | Ultra Realistic Graphics [4K HDR]", "cat": "SHOOTER_MILITAR", "pub": "2023-06-16", "v": 35730, "i": 271783, "c": 29802.956400000003, "pct": 13.06, "avd": null, "sg": 28, "lg": true, "edad": null}, {"id": "OEw0SqNzZV0", "t": "(PS5) DAKAR Desert Rally Gameplay | Ultra High Realistic Graphics [4K HDR 60fps]", "cat": "RACING_MOTOR", "pub": "2023-02-01", "v": 361762, "i": 2658595, "c": 291526.5288, "pct": 17.73, "avd": null, "sg": 397, "lg": true, "edad": null}, {"id": "ytUQAt4fW6A", "t": "(PS5) FAR CRY 6 GAMEPLAY | Ultra High Realistic Graphics Gameplay [4K HDR 60 FPS]", "cat": "MUNDO_ABIERTO_RPG", "pub": "2023-03-23", "v": 137896, "i": 1071204, "c": 113176.5192, "pct": 17.63, "avd": null, "sg": 125, "lg": true, "edad": null}, {"id": "u7xB_PBOJfA", "t": "Marvel's Avengers THOR Gameplay | Thor Returns To Earth & Saves Everyone Scene [4K HDR 60 FPS]", "cat": "ACCION_AVENTURA", "pub": "2023-05-07", "v": 68820, "i": 572268, "c": 57127.5065, "pct": 17.47, "avd": null, "sg": 108, "lg": true, "edad": null}, {"id": "KFHjXjoIbOs", "t": "MX vs ATV Legends is Absolutely CHAOTIC on PS5 Pro | Ultra Realistic Graphics [4K 60FPS]", "cat": "RACING_MOTOR", "pub": "2026-08-16", "v": 4220, "i": 36192, "c": 3510.624, "pct": 17.58, "avd": null, "sg": 2, "lg": true, "edad": null}, {"id": "ZOW9E31k2WI", "t": "(PS5) Far Cry 6 is just INCREDIBLE | Ultra Realistic Graphics [4K HDR 60FPS]", "cat": "MUNDO_ABIERTO_RPG", "pub": "2023-06-20", "v": 33733, "i": 289886, "c": 27698.93110000001, "pct": 15.67, "avd": null, "sg": 33, "lg": true, "edad": null}, {"id": "FJdxlKJyb0Y", "t": "(PS5) THE LAST OF US 2 IS JUST THE BEST PLAYSTATION GAME EVER... | Ultra Realistic Graphics [4K HDR]", "cat": "ACCION_AVENTURA", "pub": "2023-01-20", "v": 185260, "i": 1475177, "c": 137640.117, "pct": 20.66, "avd": null, "sg": 184, "lg": true, "edad": null}, {"id": "Z4il01GOzCI", "t": "The NEW EA SPORTS WRC is just BEAUTIFUL | Ultra Realistic Graphics Gameplay [4K HDR 60 FPS]", "cat": "RACING_MOTOR", "pub": "2023-11-03", "v": 13012, "i": 112009, "c": 10440.3697, "pct": 12.21, "avd": null, "sg": 13, "lg": true, "edad": null}, {"id": "Tx6iReWmIbw", "t": "Steep is Absolutely STUNNING on PS5 Pro | Ultra Realistic Graphics [4K 60FPS HDR]", "cat": "EXTREME_SPORTS", "pub": "2026-07-22", "v": 15866, "i": 139349, "c": 12652.889199999998, "pct": 16.09, "avd": null, "sg": 22, "lg": true, "edad": null}, {"id": "ZGudc9_qn-M", "t": "(PS5) Days Gone Blows my mind... IT\u00b4S JUST A MASTERPIECE", "cat": "HORROR_SURVIVAL", "pub": "2023-01-12", "v": 1512911, "i": 13571120, "c": 1204257.4651000001, "pct": 23.03, "avd": null, "sg": 1809, "lg": true, "edad": null}, {"id": "6ysCs8uCi_g", "t": "Defending Germany From Allied Bombers | Battlefield V [4K HDR]", "cat": "SHOOTER_MILITAR", "pub": "2024-06-16", "v": 1993, "i": 60126, "c": 1362.2163999999998, "pct": 13.41, "avd": null, "sg": 2, "lg": true, "edad": null}, {"id": "JscHd15MxIg", "t": "(PS5) Resident Evil Requiem \u2013 SCARY survival nightmare | Ultra Realistic 4K HDR 60FPS", "cat": "HORROR_SURVIVAL", "pub": "2026-02-28", "v": 807, "i": 22361, "c": 518.7751999999999, "pct": 11.6, "avd": null, "sg": 1, "lg": true, "edad": null}, {"id": "kZMb36mazQE", "t": "Hunter Boss Fight | Little Nightmares 2 Gameplay [4K HDR]", "cat": "HORROR_SURVIVAL", "pub": "2024-07-06", "v": 3055, "i": 97218, "c": 2260.3406, "pct": 19.14, "avd": null, "sg": 7, "lg": true, "edad": null}, {"id": "JF7lGBUDwAw", "t": "(PS5) UNDER NO FLAG | BATTLEFIELD 5  ULTRA REALISTIC Graphics Gameplay [4K 60FPS HDR]", "cat": "SHOOTER_MILITAR", "pub": "2024-11-16", "v": 2849, "i": 79550, "c": 1864.08, "pct": 14.07, "avd": null, "sg": 3, "lg": true, "edad": null}, {"id": "QlVlwem3quM", "t": "US Embassy Siege | Call of Duty Modern Warfare Gameplay | Ultra High Realistic Graphics [4K HDR]", "cat": "SHOOTER_MILITAR", "pub": "2024-05-10", "v": 3292, "i": 94679, "c": 2229.6695, "pct": 10.25, "avd": null, "sg": 6, "lg": true, "edad": null}, {"id": "bcneHm9ztek", "t": "Spider-Man Miles Morales Gets a NEW SUPER POWER Scene [4K HDR]", "cat": "ACCION_AVENTURA", "pub": "2024-06-23", "v": 2871, "i": 82368, "c": 2004.45, "pct": 18.13, "avd": null, "sg": 3, "lg": true, "edad": null}, {"id": "wjgQZDra80I", "t": "Battle of Cologne War Story - Tiger Tank Mission | Battlefield V Gameplay [4K HDR]", "cat": "SHOOTER_MILITAR", "pub": "2024-06-29", "v": 2591, "i": 75037, "c": 1870.0223999999998, "pct": 8.61, "avd": null, "sg": 2, "lg": true, "edad": null}, {"id": "TaeT-HqCkr4", "t": "(PS5) Scorpion vs Sub-Zero | Mortal Kombat 11 [4K HDR]", "cat": "ACCION_AVENTURA", "pub": "2024-06-22", "v": 2411, "i": 64948, "c": 1630.0232, "pct": 16.63, "avd": null, "sg": 5, "lg": true, "edad": null}, {"id": "e7edITrj1fM", "t": "(Xbox Series X) Hellblade 2 is just UNBELIEVABLE... | Unreal Engine 5 Showcase [4K]", "cat": "ACCION_AVENTURA", "pub": "2026-01-07", "v": 657, "i": 15316, "c": 384.43160000000006, "pct": 11.82, "avd": null, "sg": 2, "lg": true, "edad": null}, {"id": "FGtYJosJS30", "t": "Call of Duty: Modern Warfare 3 \u2013 CRAZIEST Prison Break | Ultra Realistic 4K HDR 60FPS", "cat": "SHOOTER_MILITAR", "pub": "2026-02-01", "v": 1120, "i": 22312, "c": 564.4935999999999, "pct": 13.21, "avd": null, "sg": 0, "lg": true, "edad": null}, {"id": "ClaictycHjk", "t": "(PS5) PHOENIX | CALL OF DUTY VANGUARD  ULTRA REALISTIC Graphics Gameplay [4K 60FPS HDR]", "cat": "SHOOTER_MILITAR", "pub": "2024-11-24", "v": 3384, "i": 92352, "c": 2359.9618000000005, "pct": 8.44, "avd": null, "sg": 6, "lg": true, "edad": null}, {"id": "E60j611d5Aw", "t": "Call of Duty London Attack is the MOST BRUTAL Mission Eve", "cat": "SHOOTER_MILITAR", "pub": "2025-06-08", "v": 1650, "i": 37124, "c": 957.2868000000001, "pct": 15.78, "avd": null, "sg": 2, "lg": true, "edad": null}, {"id": "2D19CHaMON4", "t": "(PS5) Ghost Recon Breakpoint REALISTIC STEALTH GAMEPLAY [4K HDR]", "cat": "SHOOTER_MILITAR", "pub": "2024-02-29", "v": 2149, "i": 58892, "c": 1532.171, "pct": 14.15, "avd": null, "sg": 6, "lg": true, "edad": null}, {"id": "oXEw7PQ_MsY", "t": "(PS5 Pro) Kratos vs Thor \u2013 The Most BRUTAL Fight in God of War History", "cat": "ACCION_AVENTURA", "pub": "2025-11-05", "v": 2594, "i": 42482, "c": 1116.1832, "pct": 18.73, "avd": null, "sg": 7, "lg": true, "edad": null}, {"id": "tWgNwRjq0Po", "t": "(PS5) Marvel's Avengers THOR Gameplay | Thor Returns To Earth & Saves Everyone Scene [4K HDR 60 FPS]", "cat": "ACCION_AVENTURA", "pub": "2025-06-14", "v": 1863, "i": 48334, "c": 1294.7872000000002, "pct": 14.48, "avd": null, "sg": 1, "lg": true, "edad": null}], "cats": [{"cat": "OTROS", "n": 15, "vpv": 47465.53333333333, "ctr": 10.460068295741822, "pct": 12.98904532832947, "avd": 65.56624722781304, "subs1k": 1.1517128920212982, "vistas": 711983.0, "imp": 5319951.0}, {"cat": "RACING_MOTOR", "n": 64, "vpv": 16658.71875, "ctr": 7.971980593680916, "pct": 15.870595230725652, "avd": 84.03503176827451, "subs1k": 1.3384507737127143, "vistas": 1066158.0, "imp": 10390430.0}, {"cat": "HORROR_SURVIVAL", "n": 36, "vpv": 68530.66666666667, "ctr": 7.71046974008944, "pct": 22.912525134732867, "avd": 124.93937178975834, "subs1k": 1.1556059250035668, "vistas": 2467104.0, "imp": 25528628.0}, {"cat": "EXTREME_SPORTS", "n": 26, "vpv": 39611.07692307692, "ctr": 7.020268998110285, "pct": 18.77928696130065, "avd": 100.88496991905916, "subs1k": 1.4535561148396718, "vistas": 1029888.0, "imp": 11158294.0}, {"cat": "MUNDO_ABIERTO_RPG", "n": 42, "vpv": 10488.0, "ctr": 6.745350986748977, "pct": 14.435713014420106, "avd": 82.40322091460536, "subs1k": 1.153245432421634, "vistas": 440496.0, "imp": 4789668.0}, {"cat": "ACCION_AVENTURA", "n": 142, "vpv": 35644.711267605635, "ctr": 6.545819510475233, "pct": 18.372462372684726, "avd": 146.03647041646738, "subs1k": 2.0420626175899907, "vistas": 5061549.0, "imp": 60358417.0}, {"cat": "SHOOTER_MILITAR", "n": 57, "vpv": 6218.456140350877, "ctr": 4.454218214516944, "pct": 15.221727370701815, "avd": 101.78761440195005, "subs1k": 1.503729701059664, "vistas": 354452.0, "imp": 5024377.0}]};
+const $=i=>document.getElementById(i);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=(x,d=0)=>x==null||!isFinite(x)?'—':Number(x).toLocaleString('es-CL',{minimumFractionDigits:d,maximumFractionDigits:d});
+const compact=x=>x==null||!isFinite(x)?'—':Math.abs(x)>=1e6?fmt(x/1e6,1)+'M':Math.abs(x)>=1e3?fmt(x/1e3,0)+'k':fmt(x,0);
+const MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const MESL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const CATL={EXTREME_SPORTS:'Extreme sports',RACING_MOTOR:'Racing / motor',SHOOTER_MILITAR:'Shooter militar',
+  HORROR_SURVIVAL:'Horror / survival',MUNDO_ABIERTO_RPG:'Mundo abierto / RPG',ACCION_AVENTURA:'Acción / aventura',OTROS:'Otros'};
+const catL=c=>CATL[c]||c;
+const PAL=['#4d8dff','#3ddc97','#f5b84b','#c07cff','#ff5d6c','#38d6d6','#9aa8c7'];
+
+/* ── 1. normalización de la fuente ────────────────────────
+   build_analytics.py entrega días; el puente interino entrega meses ya
+   agregados. Todo lo de abajo trabaja sobre meses, así que unificamos acá. */
+const MESES=(()=>{
+  if(D.periodos) return D.periodos.map(r=>({...r}));
+  const acc=new Map();
+  for(const d of D.dias||[]){
+    const k=d.f.slice(0,7), o=acc.get(k)||{p:k,v:0,i:0,c:0,sg:0,sp:0,ing:0,dias:0};
+    o.v+=d.v||0; o.i+=d.i||0; o.c+=d.c||0; o.sg+=d.sg||0; o.sp+=d.sp||0; o.ing+=d.ing||0; o.dias++;
+    acc.set(k,o);
+  }
+  return [...acc.values()].sort((a,b)=>a.p<b.p?-1:1).map(o=>({...o,sn:o.sg-o.sp}));
+})();
+const VIDEOS=(D.videos||[]).filter(v=>v.lg!==false);
+const PARCIALES=new Set(D.meta.meses_parciales||[]);
+const ANIOS=[...new Set(MESES.map(m=>m.p.slice(0,4)))].sort();
+// El desglose ganados/perdidos sirve solo si lo traen TODOS los meses:
+// con algunos sueltos cualquier suma del periodo sale incompleta.
+const TIENE_SUBS_DESGLOSE=MESES.length>0&&MESES.every(m=>m.sg!=null);
+const SERIE_VIDEO=!!D.meta.video_serie_temporal;
+
+/* ── 2. estado ───────────────────────────────────────────── */
+const S={modo:'B',gran:'mes',comp:'prev',metrica:'v',tipo:'linea',
+  anios:new Set(ANIOS),quarters:new Set([1,2,3,4]),meses:new Set([1,2,3,4,5,6,7,8,9,10,11,12]),
+  ordCat:{k:'vistas',dir:-1},ordDatos:{k:'p',dir:1}};
+
+const METRICAS={
+  B:[{k:'v',t:'Vistas',f:compact,tipo:'suma'},
+     {k:'i',t:'Impresiones',f:compact,tipo:'suma'},
+     {k:'ctr',t:'CTR',f:x=>fmt(x,2)+' %',tipo:'ratio'},
+     {k:'sn',t:'Subs netos',f:x=>fmt(x,0),tipo:'suma'},
+     {k:'sg',t:'Subs ganados',f:x=>fmt(x,0),tipo:'suma',req:'subs'},
+     {k:'sp',t:'Subs perdidos',f:x=>fmt(x,0),tipo:'suma',req:'subs'},
+     {k:'ing',t:'Ingresos (USD)',f:x=>'US$ '+fmt(x,0),tipo:'suma'},
+     {k:'rpm',t:'RPM (USD)',f:x=>'US$ '+fmt(x,2),tipo:'ratio'}],
+  A:[{k:'n',t:'Videos publicados',f:x=>fmt(x,0),tipo:'suma'},
+     {k:'v',t:'Vistas acumuladas',f:compact,tipo:'suma'},
+     {k:'vpv',t:'Vistas por video',f:compact,tipo:'ratio'},
+     {k:'ctr',t:'CTR',f:x=>fmt(x,2)+' %',tipo:'ratio'},
+     {k:'sg',t:'Subs ganados',f:x=>fmt(x,0),tipo:'suma'},
+     {k:'s1k',t:'Subs / 1k vistas',f:x=>fmt(x,2),tipo:'ratio'}]};
+const met=()=>METRICAS[S.modo].find(m=>m.k===S.metrica)||METRICAS[S.modo][0];
+
+/* ── 3. agregación ───────────────────────────────────────── */
+const qDe=m=>Math.floor((m-1)/3)+1;
+const clave=p=>{const[y,mm]=p.split('-');
+  return S.gran==='anio'?y:S.gran==='quarter'?`${y}-Q${qDe(+mm)}`:p};
+const rotulo=k=>S.gran==='anio'?k:S.gran==='quarter'?k.replace('-',' ')
+  :MES[+k.slice(5,7)-1]+" '"+k.slice(2,4);
+const pasa=p=>{const y=p.slice(0,4),mm=+p.slice(5,7);
+  return S.anios.has(y)&&S.quarters.has(qDe(mm))&&S.meses.has(mm)};
+
+function vacio(){return{v:0,i:0,c:0,sg:0,sp:0,sn:0,ing:0,n:0,meses:0,parcial:false,subsOk:true}}
+function cerrar(o){
+  o.ctr=o.i?o.c/o.i*100:null;
+  o.rpm=o.v?o.ing/(o.v/1000):null;
+  o.vpv=o.n?o.v/o.n:null;
+  o.s1k=o.v?o.sg/(o.v/1000)*1000/1000:null;
+  if(o.v) o.s1k=o.sg/o.v*1000;
+  if(!o.subsOk){o.sg=null;o.sp=null}
+  return o;
+}
+/* modo B: todo lo ocurrido en el período, sin importar cuándo se publicó */
+function serieB(){
+  const acc=new Map();
+  for(const m of MESES){
+    if(!pasa(m.p))continue;
+    const k=clave(m.p),o=acc.get(k)||Object.assign(vacio(),{k,periodos:[]});
+    o.v+=m.v||0;o.i+=m.i||0;o.c+=m.c||0;o.ing+=m.ing||0;o.sn+=m.sn||0;
+    if(m.sg==null)o.subsOk=false;else{o.sg+=m.sg;o.sp+=m.sp||0}
+    o.meses++;o.periodos.push(m.p);
+    if(PARCIALES.has(m.p))o.parcial=true;
+    acc.set(k,o);
+  }
+  return [...acc.values()].sort((a,b)=>a.k<b.k?-1:1).map(cerrar);
+}
+/* modo A: sólo los videos publicados dentro del período */
+function serieA(){
+  const acc=new Map();
+  for(const vd of VIDEOS){
+    const p=vd.pub.slice(0,7);
+    if(!pasa(p))continue;
+    const k=clave(p),o=acc.get(k)||Object.assign(vacio(),{k,vids:[]});
+    o.v+=vd.v||0;o.i+=vd.i||0;o.c+=vd.c||0;o.sg+=vd.sg||0;o.n++;o.vids.push(vd);
+    if(PARCIALES.has(p))o.parcial=true;
+    acc.set(k,o);
+  }
+  return [...acc.values()].sort((a,b)=>a.k<b.k?-1:1).map(cerrar);
+}
+const serie=()=>S.modo==='A'?serieA():serieB();
+function total(rows){
+  const o=vacio();
+  for(const r of rows){o.v+=r.v;o.i+=r.i;o.c+=r.c;o.ing+=r.ing;o.sn+=r.sn;o.n+=r.n;o.meses+=r.meses;
+    if(r.sg==null)o.subsOk=false;else{o.sg+=r.sg;o.sp+=r.sp}
+    if(r.parcial)o.parcial=true}
+  return cerrar(o);
+}
+/* base de comparación: mismo nº de períodos, corridos hacia atrás */
+function comparar(rows){
+  if(S.comp==='none'||!rows.length)return null;
+  const claves=new Set(rows.map(r=>r.k));
+  const mover=p=>{const[y,mm]=p.split('-').map(Number);
+    if(S.comp==='yoy')return `${y-1}-${String(mm).padStart(2,'0')}`;
+    const d=new Date(Date.UTC(y,mm-1-rows.length*(S.gran==='anio'?12:S.gran==='quarter'?3:1),1));
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`};
+  const base=vacio();let hay=false;
+  const fuente=S.modo==='A'
+    ? VIDEOS.map(v=>({p:v.pub.slice(0,7),v:v.v,i:v.i,c:v.c,sg:v.sg,uno:1}))
+    : MESES.map(m=>({p:m.p,v:m.v,i:m.i,c:m.c,sg:m.sg,sp:m.sp,sn:m.sn,ing:m.ing,uno:0}));
+  const objetivo=new Set();
+  for(const r of rows) for(const p of (r.periodos||r.vids?.map(v=>v.pub.slice(0,7))||[])) objetivo.add(mover(p));
+  if(!objetivo.size) for(const k of claves) objetivo.add(mover(k+'-01'));
+  for(const f of fuente){
+    if(!objetivo.has(f.p))continue;
+    hay=true;base.v+=f.v||0;base.i+=f.i||0;base.c+=f.c||0;base.ing+=f.ing||0;base.sn+=f.sn||0;base.n+=f.uno;
+    if(f.sg==null)base.subsOk=false;else{base.sg+=f.sg;base.sp+=f.sp||0}
+  }
+  return hay?cerrar(base):null;
+}
+
+/* ── 4. gráficos (SVG a mano, sin dependencias) ──────────── */
+const W=760,H=230,PAD={t:14,r:14,b:26,l:46};
+const IW=W-PAD.l-PAD.r, IH=H-PAD.t-PAD.b;
+const tip=$('tip');
+function conTip(el,cont,host){
+  el.addEventListener('pointerenter',e=>{tip.innerHTML=cont;tip.classList.add('on');mover(e)});
+  el.addEventListener('pointermove',mover);
+  el.addEventListener('pointerleave',()=>tip.classList.remove('on'));
+  function mover(e){const r=tip.getBoundingClientRect();
+    let x=e.clientX+14,y=e.clientY-r.height-10;
+    if(x+r.width>innerWidth-8)x=e.clientX-r.width-14;
+    if(y<8)y=e.clientY+18;
+    tip.style.left=x+'px';tip.style.top=y+'px'}
+}
+function svg(h=H){const s=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  s.setAttribute('viewBox',`0 0 ${W} ${h}`);s.setAttribute('role','img');return s}
+const el=(n,a={})=>{const e=document.createElementNS('http://www.w3.org/2000/svg',n);
+  for(const k in a)e.setAttribute(k,a[k]);return e};
+function escalaY(vals,h=IH){
+  const fin=vals.filter(v=>v!=null&&isFinite(v));
+  let hi=Math.max(0,...fin),lo=Math.min(0,...fin);
+  if(hi===lo)hi=lo+1;
+  const pad=(hi-lo)*.12;hi+=pad;if(lo<0)lo-=pad;
+  return{lo,hi,y:v=>PAD.t+h-(v-lo)/(hi-lo)*h}
+}
+function ejes(s,esc,rot,fm,h=IH){
+  const paso=(esc.hi-esc.lo)/4;
+  for(let i=0;i<=4;i++){const v=esc.lo+paso*i,y=esc.y(v);
+    s.appendChild(el('line',{x1:PAD.l,x2:W-PAD.r,y1:y,y2:y,class:'gl',opacity:i?.5:1}));
+    const t=el('text',{x:PAD.l-7,y:y+3.5,class:'axl','text-anchor':'end'});t.textContent=fm(v);s.appendChild(t);}
+  const salto=Math.max(1,Math.ceil(rot.length/11));
+  rot.forEach((r,i)=>{if(i%salto&&i!==rot.length-1)return;
+    const x=PAD.l+(rot.length===1?IW/2:IW*i/(rot.length-1));
+    const t=el('text',{x,y:PAD.t+h+17,class:'axl','text-anchor':'middle'});t.textContent=r;s.appendChild(t)});
+}
+function linea(host,series,rot,fmTip,_marcas){
+  host.innerHTML='';const s=svg();
+  const esc=escalaY(series.flatMap(x=>x.datos));
+  ejes(s,esc,rot,v=>compact(v));
+  const px=i=>PAD.l+(rot.length===1?IW/2:IW*i/(rot.length-1));
+  series.forEach((se,si)=>{
+    const col=se.color||PAL[si%PAL.length];
+    const pts=se.datos.map((v,i)=>v==null?null:[px(i),esc.y(v)]).filter(Boolean);
+    if(pts.length>1){
+      if(series.length===1){
+        const g=el('linearGradient',{id:'gr'+si,x1:0,y1:0,x2:0,y2:1});
+        g.appendChild(el('stop',{offset:'0%','stop-color':col,'stop-opacity':.28}));
+        g.appendChild(el('stop',{offset:'100%','stop-color':col,'stop-opacity':0}));
+        const d=el('defs');d.appendChild(g);s.appendChild(d);
+        s.appendChild(el('path',{d:`M${pts.map(p=>p.join(' ')).join('L')}L${pts.at(-1)[0]} ${esc.y(Math.max(0,esc.lo))}L${pts[0][0]} ${esc.y(Math.max(0,esc.lo))}Z`,fill:`url(#gr${si})`}));
+      }
+      s.appendChild(el('path',{d:`M${pts.map(p=>p.join(' ')).join('L')}`,fill:'none',stroke:col,'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
+    }
+    se.datos.forEach((v,i)=>{if(v==null)return;
+      const c=el('circle',{cx:px(i),cy:esc.y(v),r:series.length>1?2.6:3,fill:col,class:'dot'});
+      const hit=el('circle',{cx:px(i),cy:esc.y(v),r:13,fill:'transparent'});
+      conTip(hit,`<span class="tt">${esc2(se.rot?.[i]??rot[i])}</span>`+
+        series.map((s2,j)=>s2.datos[i]==null?'':`<div class="tr"><span style="color:${s2.color||PAL[j%PAL.length]}">${esc2(s2.t)}</span><b>${fmTip(s2.datos[i])}</b></div>`).join(''));
+      s.appendChild(c);s.appendChild(hit)});
+  });
+  host.appendChild(s);
+}
+const esc2=s=>esc(s==null?'':s);
+function barras(host,series,rot,fmTip,marcas=[]){
+  host.innerHTML='';const s=svg();
+  const esc_=escalaY(series.flatMap(x=>x.datos));
+  ejes(s,esc_,rot,v=>compact(v));
+  const n=rot.length,g=series.length;
+  const paso=IW/Math.max(n,1), ancho=Math.max(2,Math.min(46,paso*.72/g));
+  const y0=esc_.y(Math.max(0,esc_.lo));
+  rot.forEach((r,i)=>{
+    const cx=PAD.l+paso*i+paso/2;
+    series.forEach((se,j)=>{
+      const v=se.datos[i];if(v==null)return;
+      const y=esc_.y(v),x=cx-(ancho*g)/2+ancho*j;
+      const col=se.color||PAL[j%PAL.length];
+      const b=el('rect',{x,y:Math.min(y,y0),width:ancho-1.5,height:Math.max(1,Math.abs(y0-y)),
+        fill:col,rx:2.5,class:'bar',opacity:marcas[i]?.55:1});
+      if(marcas[i])b.setAttribute('stroke-dasharray','3 2'),b.setAttribute('stroke',col);
+      conTip(b,`<span class="tt">${esc2(r)}${marcas[i]?' · parcial':''}</span>`+
+        series.map((s2,k)=>s2.datos[i]==null?'':`<div class="tr"><span style="color:${s2.color||PAL[k%PAL.length]}">${esc2(s2.t)}</span><b>${fmTip(s2.datos[i])}</b></div>`).join(''));
+      s.appendChild(b)});
+  });
+  host.appendChild(s);
+}
+function leyenda(host,series,cuadro){
+  host.innerHTML=series.map((s,i)=>
+    `<span><i class="${cuadro?'sq':''}" style="background:${s.color||PAL[i%PAL.length]}"></i>${esc(s.t)}</span>`).join('');
+}
+function dispersion(host,pts){
+  host.innerHTML='';const h=250,s=svg(h),ih=h-PAD.t-PAD.b;
+  const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+  const xhi=Math.max(...xs)*1.12||1, yhi=Math.max(...ys)*1.12||1;
+  const X=v=>PAD.l+v/xhi*IW, Y=v=>PAD.t+ih-v/yhi*ih;
+  for(let i=0;i<=4;i++){const y=PAD.t+ih*i/4;
+    s.appendChild(el('line',{x1:PAD.l,x2:W-PAD.r,y1:y,y2:y,class:'gl',opacity:i===4?1:.5}));
+    const t=el('text',{x:PAD.l-7,y:y+3.5,class:'axl','text-anchor':'end'});
+    t.textContent=fmt(yhi*(1-i/4),1);s.appendChild(t)}
+  for(let i=0;i<=4;i++){const x=PAD.l+IW*i/4;
+    const t=el('text',{x,y:PAD.t+ih+17,class:'axl','text-anchor':'middle'});
+    t.textContent=compact(xhi*i/4);s.appendChild(t)}
+  const rmax=Math.max(...pts.map(p=>p.n))||1;
+  pts.forEach((p,i)=>{
+    const r=7+Math.sqrt(p.n/rmax)*17,col=PAL[i%PAL.length];
+    const c=el('circle',{cx:X(p.x),cy:Y(p.y),r,fill:col,'fill-opacity':.24,stroke:col,'stroke-width':1.5});
+    conTip(c,`<span class="tt">${esc(p.t)}</span>`+
+      `<div class="tr"><span>Vistas por video</span><b>${compact(p.x)}</b></div>`+
+      `<div class="tr"><span>CTR</span><b>${fmt(p.y,2)} %</b></div>`+
+      `<div class="tr"><span>Videos</span><b>${p.n}</b></div>`+
+      `<div class="tr"><span>Vistas totales</span><b>${compact(p.tot)}</b></div>`);
+    s.appendChild(c);
+    const t=el('text',{x:X(p.x),y:Y(p.y)+3.5,class:'axl','text-anchor':'middle',fill:'var(--ink)'});
+    t.textContent=p.t.slice(0,2).toUpperCase();s.appendChild(t)});
+  host.appendChild(s);
+}
+
+/* ── 5. categorías ───────────────────────────────────────── */
+function porCategoria(){
+  /* En modo A se recorta a los videos publicados en el período. En modo B no
+     se puede recortar: metricas_video.csv no tiene fecha, así que se muestra
+     el catálogo completo y se avisa. */
+  const base=S.modo==='A'?VIDEOS.filter(v=>pasa(v.pub.slice(0,7))):VIDEOS;
+  const acc=new Map();
+  for(const v of base){
+    const o=acc.get(v.cat)||{cat:v.cat,n:0,vistas:0,imp:0,clicks:0,subs:0,pct:0,pctW:0};
+    o.n++;o.vistas+=v.v||0;o.imp+=v.i||0;o.clicks+=v.c||0;o.subs+=v.sg||0;
+    if(v.pct!=null){o.pct+=v.pct*(v.v||0);o.pctW+=v.v||0}
+    acc.set(v.cat,o);
+  }
+  const tot=[...acc.values()].reduce((a,o)=>a+o.vistas,0)||1;
+  return [...acc.values()].map(o=>({...o,
+    vpv:o.n?o.vistas/o.n:0, ctr:o.imp?o.clicks/o.imp*100:null,
+    pctRepr:o.pctW?o.pct/o.pctW:null, s1k:o.vistas?o.subs/o.vistas*1000:null,
+    share:o.vistas/tot*100, chico:o.n<8}));
+}
+
+/* ── 6. render ───────────────────────────────────────────── */
+let ULT={filas:[],cats:[]};
+function render(){
+  document.documentElement.setAttribute('data-modo',S.modo);
+  const filas=serie(), tot=total(filas), base=comparar(filas);
+  ULT.filas=filas;
+  const rot=filas.map(r=>rotulo(r.k));
+  const marcas=filas.map(r=>r.parcial);
+  const m=met();
+
+  /* chips y encabezados */
+  const etiqueta=describir();
+  $('topchips').innerHTML=[
+    `Corte <b>${esc(D.meta.corte)}</b>`,
+    `<span class="chip on" style="border:0;padding:0">${S.modo==='A'?'Modo A · contenido publicado':'Modo B · canal completo'}</span>`,
+    `Período <b>${esc(etiqueta)}</b>`,
+    S.modo==='A'?`<b>${tot.n}</b> videos`:`<b>${filas.length}</b> ${S.gran==='mes'?'meses':S.gran==='quarter'?'quarters':'años'}`,
+  ].map(x=>`<span class="chip">${x}</span>`).join('');
+  $('hero-eyebrow').textContent=S.modo==='A'?'Modo A · performance del contenido publicado'
+    :'Modo B · performance total del canal';
+  $('kpi-h').textContent=S.modo==='A'?'Videos publicados en el período':'Resultados generados en el período';
+  $('kpi-sub').textContent=S.modo==='A'
+    ? 'Sólo videos con fecha de publicación dentro del período. Responde: ¿qué tan bien funcionó lo que publicamos?'
+    : 'Todo lo que ocurrió en el período, sin importar cuándo se publicó el video. Responde: ¿cuánto generó el canal?';
+
+  /* KPIs */
+  $('kpis').innerHTML=METRICAS[S.modo].filter(k=>!(k.req==='subs'&&!TIENE_SUBS_DESGLOSE))
+    .map(k=>tarjeta(k,tot,base)).join('');
+
+  /* evolución */
+  $('evo-t').textContent=m.t;
+  $('evo-sub').textContent=`${filas.length} ${S.gran==='mes'?'meses':S.gran==='quarter'?'quarters':'años'} en pantalla`+
+    (marcas.some(Boolean)?'. Las barras punteadas son períodos incompletos.':'.');
+  if(S.tipo==='overlay') overlay($('c-evo'),m);
+  else{
+    const serie1=[{t:m.t,datos:filas.map(r=>r[m.k]),color:S.modo==='A'?'#c07cff':'#4d8dff'}];
+    (S.tipo==='barra'?barras:linea)($('c-evo'),serie1,rot,m.f,marcas);
+    leyenda($('evo-leg'),serie1,S.tipo==='barra');
+  }
+
+  /* subs y ctr */
+  if(S.modo==='B'&&TIENE_SUBS_DESGLOSE){
+    const ss=[{t:'Ganados',datos:filas.map(r=>r.sg),color:'#3ddc97'},
+              {t:'Perdidos',datos:filas.map(r=>r.sp==null?null:-r.sp),color:'#ff5d6c'},
+              {t:'Neto',datos:filas.map(r=>r.sn),color:'#4d8dff'}];
+    barras($('c-subs'),ss,rot,x=>fmt(Math.abs(x),0),marcas);
+    leyenda($('subs-leg'),ss,true);$('subs-note').textContent='ganados, perdidos y neto';
+  }else{
+    const ss=[{t:'Subs netos',datos:filas.map(r=>S.modo==='A'?r.sg:r.sn),color:S.modo==='A'?'#c07cff':'#4d8dff'}];
+    barras($('c-subs'),ss,rot,x=>fmt(x,0),marcas);
+    leyenda($('subs-leg'),ss,true);
+    $('subs-note').textContent=S.modo==='A'?'ganados por los videos del período'
+      :'sólo el neto: metricas_canal.csv no está cargado';
+  }
+  linea($('c-ctr'),[{t:'CTR',datos:filas.map(r=>r.ctr),color:'#f5b84b'}],rot,x=>fmt(x,2)+' %');
+
+  /* comparación de períodos */
+  comparacion(filas,m);
+
+  /* categorías */
+  const cats=porCategoria().sort((a,b)=>(b[S.ordCat.k]-a[S.ordCat.k])*(S.ordCat.dir<0?1:-1));
+  ULT.cats=cats;
+  $('cats-sub').textContent=S.modo==='A'
+    ? `Categorías de los ${tot.n} videos publicados en el período seleccionado.`
+    : `Catálogo completo (${VIDEOS.length} videos). En modo B las categorías no se recortan por fecha — ver nota al pie.`;
+  $('share-n').textContent=`${cats.reduce((a,c)=>a+c.n,0)} videos`;
+  compartir($('c-share'),cats);
+  dispersion($('c-scatter'),cats.filter(c=>c.n>=3).map(c=>({t:catL(c.cat),x:c.vpv,y:c.ctr||0,n:c.n,tot:c.vistas})));
+  $('scatter-leg').textContent='Eje X: vistas promedio por video. Eje Y: CTR ponderado. '+
+    'Arriba a la derecha = categorías que además de traer tráfico convierten la impresión en click.';
+  tablaCats(cats);
+  tablaDatos(filas,m);
+  avisos(filas,tot);
+}
+
+function tarjeta(k,tot,base){
+  const v=tot[k.k];
+  const d=(cur,prev)=>{
+    if(prev==null||cur==null||!isFinite(prev)||!prev)return'';
+    const p=k.tipo==='ratio'&&(k.k==='ctr')?cur-prev:(cur/prev-1)*100;
+    const uni=k.tipo==='ratio'&&k.k==='ctr'?' pp':' %';
+    const cls=Math.abs(p)<0.05?'flat':p>0?'up':'dn';
+    const inv=k.k==='sp';
+    return `<span class="d ${inv?(cls==='up'?'dn':cls==='dn'?'up':cls):cls}">${p>0?'▲':p<0?'▼':'■'} ${fmt(Math.abs(p),1)}${uni}</span>`};
+  const lbl=S.comp==='none'?'Comparación desactivada'
+    :base?(S.comp==='yoy'?'vs. mismo período del año anterior':'vs. período anterior')
+    :S.comp==='yoy'?'No hay año anterior en la base':'No hay período anterior en la base';
+  return `<div class="kpi"><div class="k-t">${esc(k.t)}</div>
+    <div class="k-v">${k.f(v)}</div>
+    <div class="deltas">${base?d(v,base[k.k])||'<span class="d flat">sin base</span>':''}</div>
+    <div class="k-f">${esc(lbl)}${S.modo==='A'&&k.k!=='n'?` · ${tot.n} videos`:''}</div></div>`;
+}
+
+function overlay(host,m){
+  const porAnio=new Map();
+  for(const f of MESES){
+    if(!pasa(f.p))continue;
+    const y=f.p.slice(0,4),mm=+f.p.slice(5,7);
+    if(!porAnio.has(y))porAnio.set(y,Array(12).fill(null));
+    const fila=S.modo==='A'?null:f;
+    if(fila)porAnio.get(y)[mm-1]=valorMes(fila,m);
+  }
+  if(S.modo==='A'){
+    for(const v of VIDEOS){
+      const p=v.pub.slice(0,7);if(!pasa(p))continue;
+      const y=p.slice(0,4),mm=+p.slice(5,7);
+      if(!porAnio.has(y))porAnio.set(y,Array(12).fill(null));
+      const a=porAnio.get(y);a[mm-1]=(a[mm-1]||0)+(m.k==='n'?1:v[m.k==='v'?'v':m.k]||0);
+    }
+  }
+  const series=[...porAnio.entries()].sort().map(([y,datos],i)=>({t:y,datos,color:PAL[i%PAL.length]}));
+  linea(host,series,MES,m.f);
+  leyenda($('evo-leg'),series);
+}
+function valorMes(f,m){
+  const o=cerrar(Object.assign(vacio(),{v:f.v||0,i:f.i||0,c:f.c||0,sg:f.sg||0,sp:f.sp||0,
+    sn:f.sn||0,ing:f.ing||0,n:0,subsOk:f.sg!=null}));
+  return o[m.k];
+}
+function comparacion(filas,m){
+  const n=filas.length;
+  $('comp-sub').textContent=n<2?'Seleccioná al menos dos períodos para comparar.'
+    :`${n} períodos, métrica: ${m.t.toLowerCase()}. El número de videos se muestra siempre, para no confundir "publicamos más" con "cada video rindió mejor".`;
+  const serieV=[{t:m.t,datos:filas.map(r=>r[m.k]),color:S.modo==='A'?'#c07cff':'#4d8dff'}];
+  const extra=S.modo==='A'?[{t:'Videos publicados',datos:filas.map(r=>r.n),color:'#6f7a93'}]:[];
+  barras($('c-comp'),serieV,filas.map(r=>rotulo(r.k)),m.f,filas.map(r=>r.parcial));
+  leyenda($('comp-leg'),serieV.concat(extra.length&&m.k!=='n'?[{t:'(pasá el cursor para ver el nº de videos)',color:'transparent'}]:[]),true);
+}
+function compartir(host,cats){
+  const tot=cats.reduce((a,c)=>a+c.vistas,0)||1;
+  host.innerHTML=cats.map((c,i)=>{
+    const p=c.vistas/tot*100;
+    return `<div style="margin-bottom:9px">
+      <div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:4px">
+        <span>${esc(catL(c.cat))} ${c.chico?'<span class="tag warn">n&lt;8</span>':''}</span>
+        <span class="mini"><b style="color:var(--ink)">${fmt(p,1)} %</b> · ${compact(c.vistas)} · ${c.n} v.</span></div>
+      <div class="sbar" style="width:${Math.max(p,.7)}%;background:${PAL[i%PAL.length]}"></div></div>`}).join('');
+}
+
+/* ── 7. tablas y exportación ─────────────────────────────── */
+const COLS_CAT=[['cat','Categoría','l'],['n','Videos'],['vistas','Vistas'],['vpv','Vistas/video'],
+  ['ctr','CTR'],['pctRepr','% repr.'],['s1k','Subs/1k'],['share','% del total']];
+function tablaCats(cats){
+  const celda=(c,k)=>k==='cat'?`<td class="l">${esc(catL(c.cat))} ${c.chico?'<span class="tag warn">muestra chica</span>':''}</td>`
+    :`<td class="num">${k==='ctr'||k==='share'||k==='pctRepr'?(c[k]==null?'—':fmt(c[k],k==='share'?1:2)+' %')
+      :k==='s1k'?fmt(c[k],2):k==='n'?c[k]:compact(c[k])}</td>`;
+  $('t-cats').innerHTML=`<thead><tr>${COLS_CAT.map(([k,t,cl])=>
+    `<th class="${cl||''}" data-k="${k}"${S.ordCat.k===k?` aria-sort="${S.ordCat.dir<0?'descending':'ascending'}"`:''}>${t}</th>`).join('')}</tr></thead>`+
+    `<tbody>${cats.map(c=>`<tr>${COLS_CAT.map(([k])=>celda(c,k)).join('')}</tr>`).join('')}</tbody>`;
+  $('t-cats').querySelectorAll('th').forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k;S.ordCat=S.ordCat.k===k?{k,dir:-S.ordCat.dir}:{k,dir:-1};render()});
+}
+function tablaDatos(filas,m){
+  const cols=S.modo==='A'
+    ? [['k','Período','l'],['n','Videos'],['v','Vistas acum.'],['vpv','Vistas/video'],['ctr','CTR'],['sg','Subs ganados']]
+    : [['k','Período','l'],['v','Vistas'],['i','Impresiones'],['ctr','CTR'],['sn','Subs netos'],
+       ...(TIENE_SUBS_DESGLOSE?[['sg','Ganados'],['sp','Perdidos']]:[]),['ing','Ingresos'],['rpm','RPM']];
+  $('datos-t').textContent=`${filas.length} ${S.gran==='mes'?'meses':S.gran==='quarter'?'quarters':'años'} · modo ${S.modo}`;
+  const val=(r,k)=>k==='k'?`<td class="l">${esc(rotulo(r.k))} ${r.parcial?'<span class="tag warn">parcial</span>':''}</td>`
+    :`<td class="num">${k==='ctr'?(r.ctr==null?'—':fmt(r.ctr,2)+' %')
+      :k==='rpm'?(r.rpm==null?'—':'US$ '+fmt(r.rpm,2)):k==='ing'?'US$ '+fmt(r.ing,0)
+      :k==='vpv'?compact(r.vpv):['n','sn','sg','sp'].includes(k)?(r[k]==null?'—':fmt(r[k],0)):compact(r[k])}</td>`;
+  $('t-datos').innerHTML=`<thead><tr>${cols.map(([k,t,cl])=>`<th class="${cl||''}">${t}</th>`).join('')}</tr></thead>`+
+    `<tbody>${filas.map(r=>`<tr>${cols.map(([k])=>val(r,k)).join('')}</tr>`).join('')}</tbody>`;
+  ULT.colsDatos=cols;
+}
+function csv(nombre,cab,filas){
+  const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const txt='﻿'+[cab.map(q).join(';'),...filas.map(f=>f.map(q).join(';'))].join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'}));
+  a.download=nombre;a.click();URL.revokeObjectURL(a.href);
+}
+
+/* ── 8. avisos metodológicos ─────────────────────────────── */
+function describir(){
+  const a=[...S.anios].sort(), q=[...S.quarters].sort(), me=[...S.meses].sort((x,y)=>x-y);
+  const todosQ=q.length===4, todosM=me.length===12;
+  let p=a.length===ANIOS.length?`${a[0]}–${a.at(-1)}`:a.join(', ');
+  if(!todosQ) p+=' · '+q.map(x=>'Q'+x).join(', ');
+  else if(!todosM) p+=' · '+me.map(x=>MES[x-1]).join(', ');
+  return p||'sin selección';
+}
+function avisos(filas,tot){
+  const out=[];
+  if(S.modo==='A'&&!SERIE_VIDEO) out.push(['warn','!',
+    `<b>Modo A con sesgo de antigüedad.</b> Las métricas por video son un acumulado desde su publicación, no las vistas del período. Un video de enero 2025 lleva ${MESES.length>1?'meses':''} acumulando y uno reciente apenas días, así que los períodos recientes se ven artificialmente peores. Para corregirlo hace falta un export <code>video × fecha</code> — ver nota al pie.`]);
+  if(S.modo==='A'&&D.meta.n_videos_canal&&VIDEOS.length<D.meta.n_videos_canal) out.push(['warn','!',
+    `<b>Muestra parcial.</b> Hay ${VIDEOS.length} de ${D.meta.n_videos_canal} videos cargados: los CSV no están en el repo. Los números de modo A y de categorías son de esa muestra, no del catálogo completo.`]);
+  if(filas.some(r=>r.parcial)) out.push(['warn','!',
+    `<b>Períodos incompletos.</b> ${filas.filter(r=>r.parcial).map(r=>rotulo(r.k)).join(', ')} no está cerrado. Se marca punteado en los gráficos y como "parcial" en la tabla; no lo compares de frente contra períodos completos.`]);
+  if(S.gran==='anio'&&S.anios.has('2026')) out.push(['info','i',
+    `<b>2026 va hasta ${esc(D.meta.corte)}.</b> Al comparar años completos contra 2026 estás comparando 12 meses contra ${new Set(MESES.filter(m=>m.p.startsWith('2026')&&!PARCIALES.has(m.p)).map(m=>m.p)).size}.`]);
+  if(S.modo==='B'&&!TIENE_SUBS_DESGLOSE) out.push(['info','i',
+    `<b>Subs sólo en neto.</b> El desglose ganados / perdidos por mes está en <code>metricas_canal.csv</code>, que no está cargado. El neto sí es correcto.`]);
+  if(S.modo==='B') out.push(['info','i',
+    `<b>Las categorías no siguen el filtro temporal en modo B.</b> Para repartir las vistas de un período entre categorías haría falta saber qué video generó cada vista cada día. Con los datos actuales la sección 04 muestra el catálogo acumulado. En modo A sí se recorta, por fecha de publicación.`]);
+  $('avisos').innerHTML=out.map(([c,ic,t])=>
+    `<div class="note ${c}"><span class="ic">${ic}</span><div>${t}</div></div>`).join('');
+}
+const METODO=[
+ 'CTR = suma(clicks) ÷ suma(impresiones) del período. Nunca el promedio de los CTR de cada video o cada día: un promedio simple le da el mismo peso a un video con mil impresiones que a uno con un millón.',
+ '% reproducido y AVD se ponderan por vistas. RPM = ingresos ÷ (vistas / 1000).',
+ 'Modo A y modo B nunca se mezclan en un mismo indicador. El color del panel cambia (violeta / azul) y el modo activo va siempre en la barra superior.',
+ 'Modo A agrupa por fecha de publicación del video. Modo B agrupa por fecha en que ocurrió la vista.',
+ 'Todo período incompleto se marca punteado en los gráficos y con la etiqueta "parcial" en las tablas.',
+ 'Las comparaciones toman siempre la misma cantidad de períodos que la selección activa, corridos hacia atrás (o un año atrás en modo interanual).',
+ 'Las categorías con menos de 8 videos se marcan "muestra chica": el promedio por video es demasiado inestable para rankearlas.',
+ 'La variación de CTR se expresa en puntos porcentuales (pp), no en porcentaje sobre el porcentaje.',
+ 'En "subs perdidos" una baja se pinta en verde: perder menos suscriptores es un buen resultado.',
+];
+
+/* ── 9. controles ────────────────────────────────────────── */
+function seg(id,campo,extra){
+  $(id).querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    S[campo]=b.dataset.v;
+    $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+    extra&&extra();render()});
+}
+function conmutadores(host,items,set,rotF){
+  const num=typeof items[0]==='number';
+  host.innerHTML=items.map(v=>
+    `<button class="tg" data-v="${v}" aria-pressed="${set.has(v)}">${rotF(v)}</button>`).join('');
+  host.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const v=num?+b.dataset.v:b.dataset.v;
+    if(set.has(v)){if(set.size>1)set.delete(v)}else set.add(v);
+    b.setAttribute('aria-pressed',String(set.has(v)));render()});
+}
+function llenarMetricas(){
+  $('s-metrica').innerHTML=METRICAS[S.modo]
+    .filter(m=>!(m.req==='subs'&&!TIENE_SUBS_DESGLOSE))
+    .map(m=>`<option value="${m.k}">${m.t}</option>`).join('');
+  if(!METRICAS[S.modo].some(m=>m.k===S.metrica))S.metrica=METRICAS[S.modo][0].k;
+  $('s-metrica').value=S.metrica;
+}
+seg('s-modo','modo',llenarMetricas);
+seg('s-gran','gran');
+seg('s-tipo','tipo');
+$('s-comp').onchange=e=>{S.comp=e.target.value;render()};
+$('s-metrica').onchange=e=>{S.metrica=e.target.value;render()};
+conmutadores($('t-anios'),ANIOS,S.anios,v=>v);
+conmutadores($('t-q'),[1,2,3,4],S.quarters,v=>'Q'+v);
+conmutadores($('t-meses'),[1,2,3,4,5,6,7,8,9,10,11,12],S.meses,v=>MES[v-1]);
+$('b-reset').onclick=()=>{
+  S.anios=new Set(ANIOS);S.quarters=new Set([1,2,3,4]);S.meses=new Set([1,2,3,4,5,6,7,8,9,10,11,12]);
+  conmutadores($('t-anios'),ANIOS,S.anios,v=>v);
+  conmutadores($('t-q'),[1,2,3,4],S.quarters,v=>'Q'+v);
+  conmutadores($('t-meses'),[1,2,3,4,5,6,7,8,9,10,11,12],S.meses,v=>MES[v-1]);
+  render()};
+$('b-exp-cat').onclick=()=>csv(`joy-categorias-${S.modo}-${Date.now()}.csv`,
+  COLS_CAT.map(c=>c[1]),ULT.cats.map(c=>COLS_CAT.map(([k])=>k==='cat'?catL(c.cat):c[k])));
+$('b-exp-datos').onclick=()=>csv(`joy-serie-${S.modo}-${S.gran}-${Date.now()}.csv`,
+  ULT.colsDatos.map(c=>c[1]),ULT.filas.map(r=>ULT.colsDatos.map(([k])=>k==='k'?rotulo(r.k):r[k])));
+
+$('metodo').innerHTML=METODO.map(t=>`<li>${t}</li>`).join('')+
+  (SERIE_VIDEO?'':`<li><b style="color:var(--warn)">Pendiente:</b> para separar "vistas de videos nuevos" de "vistas del catálogo" dentro de un mismo período hace falta un export de YouTube Studio con una fila por video y por día. Sin eso, el modo A mide el acumulado de cada video y no lo que generó dentro del período.</li>`);
+
+llenarMetricas();
+render();
+</script>
+
+</body>
+</html>
