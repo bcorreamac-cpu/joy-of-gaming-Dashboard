@@ -45,6 +45,7 @@ scripts/build_analytics.py         CSV -> data/analytics.json
 scripts/render_dashboard.py        analytics.json + plantilla -> dashboard.html
 scripts/validar.py                 ¿los datos son coherentes consigo mismos?
 scripts/guardia.py                 ¿no empeoran a los publicados?
+scripts/ctr_revisar.py             ¿el export de Studio alcanza? (no escribe)
 scripts/ctr_actualizar.py          carga el CTR semanal en data/historico/
 data/juegos.json                   juegos repetidos, para el ranking (editable)
 scripts/yt_autorizar.py            permiso de Google (se corrió una sola vez)
@@ -129,10 +130,11 @@ llegaron a mano o por API. Mantener esa compatibilidad al tocarlo.
   (es público), Analytics devuelve 403: el token tiene que ser del dueño.
 - **La extensión del navegador para automatizar todo.** Necesita la máquina
   prendida y la sesión viva. Por eso el grueso va por API y Actions.
-- **Pedirle a Studio un export de más de 500 filas.** Corta ahí y no avisa: el
-  archivo baja como si estuviera entero. Por eso la serie diaria va por año y la
-  tabla de videos va ordenada por fecha de publicación. `ctr_actualizar.py` grita
-  cuando un export trae 500 filas justas.
+- **Pedirle a Studio una tabla muy larga.** Corta sin avisar: 995 días
+  volvieron 500. No es un número exacto —un export de 501 filas vino entero—,
+  así que contar filas no alcanza: por eso existe `ctr_revisar.py`, que mira qué
+  falta en vez de cuánto vino. Dentro del zip, `Totales.csv` puede traer la
+  serie entera aunque la tabla venga cortada; se lee también.
 - **Bajar desde la vista simple de Estadísticas.** Exporta solo las columnas que
   están en pantalla, y las impresiones no están entre las de fábrica. Tiene que
   ser Modo avanzado, con las dos columnas agregadas a mano.

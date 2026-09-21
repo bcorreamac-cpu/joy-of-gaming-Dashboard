@@ -98,21 +98,23 @@ script en el paso 2. Si no cuadran, el período salió mal y hay que rehacerlo.
 
 ## 2. Cargarlos
 
+**Primero revisá, después cargá.** `ctr_revisar.py` no escribe nada: abre los
+archivos, dice qué trae cada uno y compara contra lo que ya hay. Si falta algo,
+te dice exactamente qué período volver a pedir.
+
 ```bash
 cd ~/Documents/joy-of-gaming-Dashboard
 git pull
-ls -t ~/Downloads/*.zip | head -4          # ¿son los dos de hoy y nada más?
-python3 scripts/ctr_actualizar.py ~/Downloads/*.zip
+python3 scripts/ctr_revisar.py ~/Downloads/*.zip
 ```
 
-El `ls` no es un adorno. Studio le pone el período al nombre del archivo, y un
-export viejo olvidado en Downloads entra igual que el de hoy: pasó, y sumó todo
-2023 sin que se notara hasta contar las filas. Si ves algo que no bajaste recién,
-nombralo a mano en vez de usar el comodín:
+Termina en un veredicto. Si dice **Sirve**, te deja escrito el comando para
+cargar. Si dice **FALTA**, no cargues: te dice qué pedir de nuevo.
 
-```bash
-python3 scripts/ctr_actualizar.py ~/Downloads/"Fecha 2024-01-01_2026-09-22 Joy Of Gaming.zip"
-```
+Studio le pone el período al nombre del archivo, así que un export viejo
+olvidado en Downloads entra igual que el de hoy: pasó, y sumó todo 2023 sin que
+se notara hasta contar las filas. El revisor nombra cada archivo que abre; si
+ves alguno que no bajaste recién, sacalo de Downloads y volvé a correrlo.
 
 La salida dice qué archivo está leyendo, cuántos videos y días entraron, **de qué
 fecha a qué fecha**, y cuáles no reconoció. Tres cosas que hay que mirar:
