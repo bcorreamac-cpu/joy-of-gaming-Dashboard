@@ -20,15 +20,25 @@ Entrá con la cuenta de **Joy of Gaming** a <https://studio.youtube.com> →
 Arriba a la derecha, poné el período en **Personalizado → desde 2024-01-01 hasta
 hoy**. Si aparece *Máximo* o *Todo el tiempo*, también sirve.
 
+**Tiene que ser desde MODO AVANZADO**, el botón de arriba a la derecha. La vista
+simple exporta solo las columnas que están en pantalla, y ahí no figuran las
+impresiones: el archivo baja igual, con vistas y tiempo de reproducción, o sea
+justo lo que el API ya trae solo. Si el encabezado no dice "Impresiones", ese
+export no sirve para nada acá.
+
+Ya en Modo avanzado, agregá las columnas que faltan: el **+** a la derecha de
+los encabezados de la tabla → **Impresiones** y **Porcentaje de clics de las
+impresiones**.
+
 Después, dos descargas:
 
-| # | Pestaña | Sub-pestaña | Qué trae |
-|---|---------|-------------|----------|
-| 1 | **Contenido** | **Videos** (no Shorts) | impresiones y CTR de cada video |
-| 2 | **Fecha** | — | impresiones y CTR del canal, día por día |
+| # | Pestaña | Qué trae |
+|---|---------|----------|
+| 1 | **Vídeo** | impresiones y CTR de cada video |
+| 2 | **Fecha** | impresiones y CTR del canal, día por día |
 
-En cada una, el botón **Descargar** (la flecha hacia abajo, arriba a la derecha)
-→ **Valores separados por comas (.csv)**. Bajan dos `.zip` a `~/Downloads`.
+En cada una, el botón **Descargar** → **Valores separados por comas (.csv)**.
+Bajan dos `.zip` a `~/Downloads`.
 
 > **No los abras ni los toques.** El script los lee tal cual, zip incluido, y
 > saca de adentro el archivo que corresponde.

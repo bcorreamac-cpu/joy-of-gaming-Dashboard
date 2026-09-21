@@ -165,16 +165,23 @@ def como_export(filas):
     if not filas:
         return []
     cab = filas[0]
-    i_imp = columna(cab, 'impresion', 'impression')
-    i_ctr = columna(cab, 'clic', 'click')
-    if i_imp is None or i_ctr is None:
-        return []
     # La primera columna dice de qué tabla salió: el catálogo o la serie diaria.
     if columna(cab, 'contenido', 'content') == 0:
         tipo = 'video'
     elif columna(cab, 'fecha', 'date') == 0:
         tipo = 'dia'
     else:
+        return []
+    i_imp = columna(cab, 'impresion', 'impression')
+    i_ctr = columna(cab, 'clic', 'click')
+    if i_imp is None or i_ctr is None:
+        # Es un export de Studio, pero de la vista simple: exporta solo las
+        # columnas que están en pantalla, y ahí no figuran las impresiones. Sin
+        # este aviso el archivo se descarta en silencio y parece que no sirviera.
+        print(f'  es un export de Studio ({tipo}) pero no trae impresiones ni CTR.')
+        print(f'    columnas: {", ".join(c.strip() for c in cab if c.strip())}')
+        print('    Volvé a bajarlo desde MODO AVANZADO agregando las columnas '
+              '"Impresiones"\n    y "Porcentaje de clics de las impresiones".')
         return []
     out = []
     for f in filas[1:]:
