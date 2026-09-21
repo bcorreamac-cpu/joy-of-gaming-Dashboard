@@ -12,8 +12,10 @@ cuando se puede evitar.
 ## "Dame el prompt del lunes"
 
 Cuando el usuario pida **el prompt del lunes**, el **prompt del CTR**, o algo
-equivalente: leé `PROMPT_CTR.md` y devolvéle los pasos 1 a 3, cortos. No lo
-reescribas de memoria: está afinado y probado.
+equivalente: leé `LUNES.md` y devolvéselo tal cual. Es la hoja de ruta corta,
+pensada para copiar y pegar. `PROMPT_CTR.md` es el detrás de escena —por qué
+cada cosa es como es— y va solo si pregunta. No los reescribas de memoria:
+están afinados y probados.
 
 Son tres minutos: dos descargas de Modo avanzado —pestaña **Fecha** de los
 **últimos 15 días**, y pestaña **Contenido** del **rango completo ordenada por
@@ -55,6 +57,7 @@ scripts/guardia.py                 ¿no empeoran a los publicados?
 scripts/ctr_revisar.py             ¿el export de Studio alcanza? (no escribe)
 scripts/ctr_actualizar.py          carga el CTR semanal en data/historico/
 data/juegos.json                   juegos repetidos, para el ranking (editable)
+LUNES.md                           la rutina semanal, para copiar y pegar
 scripts/yt_autorizar.py            permiso de Google (se corrió una sola vez)
 ```
 
