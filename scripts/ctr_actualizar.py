@@ -45,10 +45,11 @@ CLAVE = {'dia': 'fecha', 'video': 'id'}
 # de "últimos 28 días", las impresiones vienen mucho más chicas y pisarlas borra
 # años de datos. Por debajo de este umbral se asume que el período está mal.
 CAIDA_SOSPECHOSA = 0.5
-# Studio no exporta más de 500 filas por tabla, y no avisa: corta y entrega el
-# archivo como si estuviera entero. Por eso el histórico se armó con la serie
-# diaria partida en pedazos —del 2024-01-01 al 2025-05-15 hay 500 días justos—.
-LIMITE_STUDIO = 500
+# Studio corta las tablas largas sin avisar: un pedido de 995 días volvió con
+# 500. No es un número exacto —un export de 501 filas vino entero—, así que esto
+# es una raya para sospechar, no una certeza. Quién decide de verdad es
+# ctr_revisar.py, que mira qué falta en vez de contar filas.
+SOSPECHA_CORTE = 500
 # El panel arranca en 2024. Un export más viejo tirado en Downloads no tiene por
 # qué entrar: pasó, y sumó todo 2023 sin que nadie lo notara hasta contar las
 # filas. Se lee de donde está definido de verdad para no tener dos verdades.
@@ -142,10 +143,12 @@ def textos(ruta):
     """
     if ruta and zipfile.is_zipfile(ruta):
         with zipfile.ZipFile(ruta) as z:
+            # Todos, incluido 'Totales.csv'. Se ignoraba por el nombre, y eso
+            # fue un error: la tabla de Studio viene cortada mientras que el
+            # archivo de al lado puede traer la serie entera. Los que no sirven
+            # se descartan abajo por sus columnas, que es el criterio honesto.
             csvs = [n for n in z.namelist() if n.lower().endswith('.csv')]
-            # Junto a la tabla vienen los totales del rango, que no son filas.
-            tabla = [n for n in csvs if 'total' not in n.lower()]
-            return [z.read(n).decode('utf-8-sig') for n in (tabla or csvs)]
+            return [z.read(n).decode('utf-8-sig') for n in csvs]
     if ruta:
         return [open(ruta, encoding='utf-8-sig').read()]
     return [sys.stdin.read()]
@@ -174,6 +177,12 @@ def como_export(filas):
         tipo = 'video'
     elif columna(cab, 'fecha', 'date') == 0:
         tipo = 'dia'
+        # Algunos zips traen un cruce fecha × video. Leerlo como serie diaria
+        # metería la cifra de un solo video como si fuera la del canal entero.
+        if columna(cab, 'título del video', 'video title', 'contenido') is not None:
+            print('  se saltea una tabla cruzada (fecha × video): no es la serie '
+                  'del canal.')
+            return []
     else:
         return []
     i_imp = columna(cab, 'impresion', 'impression')
@@ -198,12 +207,10 @@ def como_export(filas):
         if tipo == 'dia':
             clave = a_fecha(clave) or clave
         out.append([tipo, clave, f[i_imp], f[i_ctr]])
-    if len(out) >= LIMITE_STUDIO:
-        print(f'  ¡OJO! {len(out)} filas, y Studio corta en {LIMITE_STUDIO}: '
-              'este export está truncado.')
-        print('    Días: pedilo por año, uno por vez.')
-        print('    Videos: ordená la tabla por fecha de publicación, los más '
-              'nuevos primero.')
+    if len(out) >= SOSPECHA_CORTE:
+        print(f'  {len(out)} filas: Studio corta las tablas largas sin avisar. '
+              'Corré\n    scripts/ctr_revisar.py antes de cargar, para ver si '
+              'falta algo.')
     return out
 
 
@@ -345,8 +352,10 @@ def main():
         # conteos solos no dicen nada, un día de más se ve igual que uno de
         # menos. Para los videos importa el final, que es hasta dónde llega.
         if tipo == 'dia':
-            claves = sorted(c for _, c, _, _ in propias)
-            print(f'  entraron {len(propias)} días, de {claves[0]} a {claves[-1]}')
+            # Distintos, no filas: un zip suele traer la misma fecha en dos
+            # de sus CSV y contarla dos veces asusta sin motivo.
+            claves = sorted({c for _, c, _, _ in propias})
+            print(f'  entraron {len(claves)} días, de {claves[0]} a {claves[-1]}')
         else:
             # Lo que importa no es cuántas filas trajo el export sino cuántos de
             # los videos que el panel muestra quedaron con impresiones. Un
