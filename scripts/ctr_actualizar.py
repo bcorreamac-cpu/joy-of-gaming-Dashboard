@@ -45,6 +45,14 @@ CLAVE = {'dia': 'fecha', 'video': 'id'}
 # de "últimos 28 días", las impresiones vienen mucho más chicas y pisarlas borra
 # años de datos. Por debajo de este umbral se asume que el período está mal.
 CAIDA_SOSPECHOSA = 0.5
+# El panel arranca en 2024. Un export más viejo tirado en Downloads no tiene por
+# qué entrar: pasó, y sumó todo 2023 sin que nadie lo notara hasta contar las
+# filas. Se lee de donde está definido de verdad para no tener dos verdades.
+try:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from build_analytics import DESDE
+except ImportError:
+    DESDE = '2024-01-01'
 
 
 def num(v):
@@ -185,6 +193,10 @@ def como_export(filas):
 def crudas(ruta):
     """Todas las filas de entrada, venga el export de Studio o una lista."""
     out = []
+    # Con nombre y todo: un comodín en la línea de comandos puede agarrar de
+    # más, y el nombre del archivo de Studio lleva adentro el período que trae.
+    if ruta:
+        print(f'leyendo {os.path.basename(ruta)}')
     for texto in textos(ruta):
         filas = [f for f in csv.reader(texto.splitlines()) if f]
         # Si no es un export reconocible se deja pasar tal cual: abajo se filtra
@@ -195,7 +207,7 @@ def crudas(ruta):
 
 def leer_entrada(rutas=()):
     """Filas de los archivos o de la entrada estándar, tolerando encabezado."""
-    titulos, sin_resolver = indice_titulos(), []
+    titulos, sin_resolver, viejos = indice_titulos(), [], []
     filas = []
     for f in [f for r in (rutas or [None]) for f in crudas(r)]:
         if len(f) < 4:
@@ -215,6 +227,9 @@ def leer_entrada(rutas=()):
         if tipo == 'dia' and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', clave):
             print(f'  se saltea: fecha con formato raro -> {clave}')
             continue
+        if tipo == 'dia' and clave < DESDE:
+            viejos.append(clave)
+            continue
         if tipo == 'video' and not ES_ID.fullmatch(clave):
             resuelto = titulos.get(normalizar(clave))
             if not resuelto:
@@ -225,6 +240,10 @@ def leer_entrada(rutas=()):
             print(f'  se saltea: CTR fuera de rango -> {clave} = {ctr}')
             continue
         filas.append((tipo, clave, imp, ctr))
+    if viejos:
+        print(f'  {len(viejos)} día(s) anteriores a {DESDE} ignorados '
+              f'({min(viejos)} … {max(viejos)}): el panel arranca ahí. '
+              'Si no esperabas eso, hay un export viejo en la lista.')
     if sin_resolver:
         print(f'  {len(sin_resolver)} título(s) sin match en el catálogo:')
         for t in sin_resolver[:5]:
@@ -296,6 +315,12 @@ def main():
         guardar(tipo, datos)
         print(f'{ARCHIVOS[tipo]}: {len(datos)} en total '
               f'(+{nuevos} nuevos, {cambiados} actualizados, {iguales} sin cambio)')
+        # El rango es lo que delata un export del período equivocado: los
+        # conteos solos no dicen nada, un día de más se ve igual que uno de
+        # menos. Para los videos importa el final, que es hasta dónde llega.
+        if tipo == 'dia':
+            claves = sorted(c for _, c, _, _ in propias)
+            print(f'  entraron {len(propias)} días, de {claves[0]} a {claves[-1]}')
         if sospechosos:
             print(f'\n  {len(sospechosos)} video(s) NO se tocaron: traían menos de '
                   f'la mitad de las impresiones guardadas.')

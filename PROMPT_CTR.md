@@ -74,11 +74,22 @@ script en el paso 2. Si no cuadran, el período salió mal y hay que rehacerlo.
 ```bash
 cd ~/Documents/joy-of-gaming-Dashboard
 git pull
+ls -t ~/Downloads/*.zip | head -4          # ¿son los dos de hoy y nada más?
 python3 scripts/ctr_actualizar.py ~/Downloads/*.zip
 ```
 
-Te dice cuántos videos y cuántos días entraron, cuántos se actualizaron, y
-cuáles no reconoció.
+El `ls` no es un adorno. Studio le pone el período al nombre del archivo, y un
+export viejo olvidado en Downloads entra igual que el de hoy: pasó, y sumó todo
+2023 sin que se notara hasta contar las filas. Si ves algo que no bajaste recién,
+nombralo a mano en vez de usar el comodín:
+
+```bash
+python3 scripts/ctr_actualizar.py ~/Downloads/"Fecha 2024-01-01_2026-09-22 Joy Of Gaming.zip"
+```
+
+La salida dice qué archivo está leyendo, cuántos videos y días entraron, **de qué
+fecha a qué fecha**, y cuáles no reconoció. El rango es lo que hay que mirar: los
+conteos solos no delatan un período equivocado.
 
 ---
 
