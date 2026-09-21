@@ -45,6 +45,10 @@ CLAVE = {'dia': 'fecha', 'video': 'id'}
 # de "últimos 28 días", las impresiones vienen mucho más chicas y pisarlas borra
 # años de datos. Por debajo de este umbral se asume que el período está mal.
 CAIDA_SOSPECHOSA = 0.5
+# Studio no exporta más de 500 filas por tabla, y no avisa: corta y entrega el
+# archivo como si estuviera entero. Por eso el histórico se armó con la serie
+# diaria partida en pedazos —del 2024-01-01 al 2025-05-15 hay 500 días justos—.
+LIMITE_STUDIO = 500
 # El panel arranca en 2024. Un export más viejo tirado en Downloads no tiene por
 # qué entrar: pasó, y sumó todo 2023 sin que nadie lo notara hasta contar las
 # filas. Se lee de donde está definido de verdad para no tener dos verdades.
@@ -194,6 +198,12 @@ def como_export(filas):
         if tipo == 'dia':
             clave = a_fecha(clave) or clave
         out.append([tipo, clave, f[i_imp], f[i_ctr]])
+    if len(out) >= LIMITE_STUDIO:
+        print(f'  ¡OJO! {len(out)} filas, y Studio corta en {LIMITE_STUDIO}: '
+              'este export está truncado.')
+        print('    Días: pedilo por año, uno por vez.')
+        print('    Videos: ordená la tabla por fecha de publicación, los más '
+              'nuevos primero.')
     return out
 
 
@@ -258,6 +268,15 @@ def leer_entrada(rutas=()):
         if len(sin_resolver) > 5:
             print(f'    ...y {len(sin_resolver) - 5} más')
     return filas
+
+
+def catalogo():
+    """Los IDs que el panel muestra hoy, para saber si el export los cubre."""
+    ruta = os.path.join(RAIZ, 'data', 'analytics.json')
+    if not os.path.exists(ruta):
+        return set()
+    with open(ruta, encoding='utf-8') as fh:
+        return {v['id'] for v in json.load(fh).get('videos', [])}
 
 
 def cargar(tipo):
@@ -328,6 +347,19 @@ def main():
         if tipo == 'dia':
             claves = sorted(c for _, c, _, _ in propias)
             print(f'  entraron {len(propias)} días, de {claves[0]} a {claves[-1]}')
+        else:
+            # Lo que importa no es cuántas filas trajo el export sino cuántos de
+            # los videos que el panel muestra quedaron con impresiones. Un
+            # export de 500 filas puede traer cientos de videos viejos y
+            # saltearse los nuevos, que son los que interesan.
+            cat = catalogo()
+            if cat:
+                print(f'  del panel ({len(cat)} videos), {len(cat & set(datos))} '
+                      'tienen impresiones')
+                sobran = len(set(datos) - cat)
+                if sobran:
+                    print(f'  ({sobran} id(s) fuera del catálogo: videos de '
+                          'antes de 2024 o shorts. El panel los ignora.)')
         if sospechosos:
             print(f'\n  {len(sospechosos)} video(s) NO se tocaron: traían menos de '
                   f'la mitad de las impresiones guardadas.')
