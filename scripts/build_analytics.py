@@ -223,6 +223,10 @@ def main():
             'generado': date.today().isoformat(),
             'anios': list(ANIOS),
             'granularidad': 'dia',
+            # De qué archivos salió. Sirve para distinguir una corrida real
+            # —canal_api.csv, escrito por yt_descargar.py— de una de desarrollo
+            # con los CSV viejos de Studio en data/entrada/.
+            'fuente': sorted(os.path.basename(x) for x in f_canal + f_videos),
             'meses_parciales': meses_parciales,
             'semanas_parciales': semanas_parciales,
             'dias_faltantes': huecos,

@@ -62,6 +62,11 @@ llegaron a mano o por API. Mantener esa compatibilidad al tocarlo.
 - **El CTR siempre va atrás del resto.** Se carga a mano, así que los últimos
   días y los videos más nuevos no tienen impresiones. Eso es la frontera normal,
   no un agujero: lo que `validar.py` rechaza es un hueco en el medio.
+- **No commitear `data/analytics.json` regenerado a mano.** Correr
+  `build_analytics.py` en local lo rehace desde los CSV viejos de `data/entrada/`
+  y pisa el que dejó el workflow, que es el real. `meta.fuente` dice de dónde
+  salió cada uno y `guardia.py` lo detecta, pero lo sano es no subirlo: para
+  probar el panel alcanza con `render_dashboard.py`.
 - **Nada de números fijos en los chequeos.** Esto corre todas las semanas: todo
   lo que dependa del rango se deriva del rango.
 - **La paleta está validada** (banda de luminosidad, croma, daltonismo,

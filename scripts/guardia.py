@@ -34,6 +34,15 @@ def main():
         return 0
     nuevo = cargar('data/analytics.json')
 
+    # Si lo publicado salió de una corrida local con los CSV viejos, comparar
+    # conteos contra eso no dice nada: el catálogo es otro. Pasó de verdad, al
+    # commitear un analytics.json regenerado a mano encima del del workflow.
+    fuente = viejo['meta'].get('fuente')
+    de_api = fuente is None or any('_api' in x for x in fuente)
+    if not de_api:
+        print(f'guardia: lo publicado no vino del API ({", ".join(fuente)}).')
+        print('  Los conteos no son comparables; se revisan solo los totales.\n')
+
     fallas = []
     def chk(ok, msg):
         print(('  ok   · ' if ok else '  FALLA · ') + msg)
@@ -44,10 +53,12 @@ def main():
     chk(cn >= cv, f'el corte no retrocede: {cv} → {cn}')
 
     dv, dn = len(viejo['dias']), len(nuevo['dias'])
-    chk(dn >= dv, f'no se pierden días: {dv} → {dn}')
-
     vv, vn = len(viejo['videos']), len(nuevo['videos'])
-    chk(vn >= vv, f'no se pierden videos: {vv} → {vn}')
+    if de_api:
+        chk(dn >= dv, f'no se pierden días: {dv} → {dn}')
+        chk(vn >= vv, f'no se pierden videos: {vv} → {vn}')
+    else:
+        print(f'  (se omite: días {dv} → {dn}, videos {vv} → {vn})')
 
     for campo, etq in (('v', 'vistas'), ('i', 'impresiones')):
         a = sum(d.get(campo) or 0 for d in viejo['dias'])
