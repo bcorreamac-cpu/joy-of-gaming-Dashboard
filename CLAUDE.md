@@ -18,7 +18,12 @@ reescribas de memoria: está afinado y probado.
 Son tres minutos: dos descargas del botón de exportar de Studio (pestaña
 **Contenido → Videos** y pestaña **Fecha**, las dos con el **rango completo**),
 `ctr_actualizar.py` con los dos zip, y `git push`. El push dispara el workflow
-solo. La extensión de Chrome quedó como plan B, al final del archivo.
+solo.
+
+La extensión de Chrome aparece dos veces y no son lo mismo: en el paso 1 para
+**apretar los botones de descarga**, que hace bien y es lo que conviene
+ofrecerle; y en el plan B del final para **leer la tabla**, que es frágil y va
+solo si el botón no está.
 
 **La tabla de videos va completa todos los lunes.** Un día cerrado no cambia,
 pero un video acumula impresiones para siempre: traer solo lo nuevo deja los

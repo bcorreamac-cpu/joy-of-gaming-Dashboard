@@ -20,20 +20,62 @@ Entrá con la cuenta de **Joy of Gaming** a <https://studio.youtube.com> →
 Arriba a la derecha, poné el período en **Personalizado → desde 2024-01-01 hasta
 hoy**. Si aparece *Máximo* o *Todo el tiempo*, también sirve.
 
+**Tiene que ser desde MODO AVANZADO**, el botón de arriba a la derecha. La vista
+simple exporta solo las columnas que están en pantalla, y ahí no figuran las
+impresiones: el archivo baja igual, con vistas y tiempo de reproducción, o sea
+justo lo que el API ya trae solo. Si el encabezado no dice "Impresiones", ese
+export no sirve para nada acá.
+
+Ya en Modo avanzado, agregá las columnas que faltan: el **+** a la derecha de
+los encabezados de la tabla → **Impresiones** y **Porcentaje de clics de las
+impresiones**.
+
 Después, dos descargas:
 
-| # | Pestaña | Sub-pestaña | Qué trae |
-|---|---------|-------------|----------|
-| 1 | **Contenido** | **Videos** (no Shorts) | impresiones y CTR de cada video |
-| 2 | **Fecha** | — | impresiones y CTR del canal, día por día |
+| # | Pestaña | Qué trae |
+|---|---------|----------|
+| 1 | **Vídeo** | impresiones y CTR de cada video |
+| 2 | **Fecha** | impresiones y CTR del canal, día por día |
 
-En cada una, el botón **Descargar** (la flecha hacia abajo, arriba a la derecha)
-→ **Valores separados por comas (.csv)**. Bajan dos `.zip` a `~/Downloads`.
+En cada una, el botón **Descargar** → **Valores separados por comas (.csv)**.
+Bajan dos `.zip` a `~/Downloads`.
 
 > **No los abras ni los toques.** El script los lee tal cual, zip incluido, y
 > saca de adentro el archivo que corresponde.
 
 Si el botón de descargar no aparece, andá al **Plan B** del final.
+
+### Si preferís que lo haga la extensión de Claude
+
+Apretar botones la extensión lo hace bien; lo que no conviene es pedirle que lea
+la tabla (ver Plan B). Abrí Studio en Estadísticas y pegale esto:
+
+> Estás en YouTube Studio, sección Estadísticas del canal Joy of Gaming.
+>
+> Necesito que bajes dos informes. Hacé esto en orden:
+>
+> 1. Arriba a la derecha, abrí el selector de período y elegí **Personalizado**.
+>    Poné desde el **1 de enero de 2024** hasta **hoy**. Aplicá.
+> 2. Andá a la pestaña **Contenido** y, dentro, a la sub-pestaña **Videos**
+>    (no Shorts, no En vivo).
+> 3. Apretá el botón de **descargar** (la flecha hacia abajo, arriba a la
+>    derecha) y elegí **Valores separados por comas (.csv)**. Esperá a que baje.
+> 4. Andá a la pestaña **Fecha**, sin tocar el período.
+> 5. Descargá igual que antes: flecha hacia abajo → .csv.
+>
+> Cuando termines, decime:
+>
+> - el nombre de los dos archivos que bajaron
+> - el período que quedó seleccionado, tal como lo muestra la pantalla
+> - de la pestaña Contenido, la fila **Total**: cuántas impresiones y qué CTR
+>   muestra
+> - cuántos videos lista la tabla
+>
+> **No leas la tabla fila por fila.** Los archivos ya traen todo; solo necesito
+> que confirmes los totales.
+
+Los totales que devuelve no son un adorno: se cruzan contra lo que cargue el
+script en el paso 2. Si no cuadran, el período salió mal y hay que rehacerlo.
 
 ---
 
@@ -42,11 +84,22 @@ Si el botón de descargar no aparece, andá al **Plan B** del final.
 ```bash
 cd ~/Documents/joy-of-gaming-Dashboard
 git pull
+ls -t ~/Downloads/*.zip | head -4          # ¿son los dos de hoy y nada más?
 python3 scripts/ctr_actualizar.py ~/Downloads/*.zip
 ```
 
-Te dice cuántos videos y cuántos días entraron, cuántos se actualizaron, y
-cuáles no reconoció.
+El `ls` no es un adorno. Studio le pone el período al nombre del archivo, y un
+export viejo olvidado en Downloads entra igual que el de hoy: pasó, y sumó todo
+2023 sin que se notara hasta contar las filas. Si ves algo que no bajaste recién,
+nombralo a mano en vez de usar el comodín:
+
+```bash
+python3 scripts/ctr_actualizar.py ~/Downloads/"Fecha 2024-01-01_2026-09-22 Joy Of Gaming.zip"
+```
+
+La salida dice qué archivo está leyendo, cuántos videos y días entraron, **de qué
+fecha a qué fecha**, y cuáles no reconoció. El rango es lo que hay que mirar: los
+conteos solos no delatan un período equivocado.
 
 ---
 
@@ -94,9 +147,9 @@ forma más rápida de que el panel deje de cuadrar.
 
 ## Plan B: la extensión de Claude en Chrome
 
-Sirve si el botón de descargar no está. Es menos confiable —depende de que la
-extensión lea bien trescientas filas con scroll—, así que usalo solo si hace
-falta. Mismo período: **rango completo**.
+Sirve solo si el botón de descargar no está. Acá la extensión no aprieta
+botones sino que **lee la tabla**, y eso es otra cosa: depende de que cargue
+bien trescientas filas con scroll. Usalo como último recurso. Mismo período: **rango completo**.
 
 > Estoy en la pestaña Contenido de YouTube Studio, viendo la tabla de videos.
 >
