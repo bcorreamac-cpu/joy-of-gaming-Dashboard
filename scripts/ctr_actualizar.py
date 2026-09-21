@@ -188,11 +188,18 @@ def como_export(filas):
     i_imp = columna(cab, 'impresion', 'impression')
     i_ctr = columna(cab, 'clic', 'click')
     if i_imp is None or i_ctr is None:
-        # Es un export de Studio, pero de la vista simple: exporta solo las
-        # columnas que están en pantalla, y ahí no figuran las impresiones. Sin
-        # este aviso el archivo se descarta en silencio y parece que no sirviera.
+        cols = ", ".join(c.strip() for c in cab if c.strip())
+        # 'Totales.csv' es la serie del gráfico, y el gráfico dibuja una métrica
+        # sola: trae todas las fechas pero nunca las dos columnas juntas. No es
+        # un export mal pedido, así que no corresponde mandar a arreglar nada.
+        if len(cab) <= 3:
+            print(f'  es la serie del gráfico ({cols}): una métrica sola, '
+                  'sin con qué calcular el CTR.')
+            return []
+        # La vista simple, en cambio, sí está mal pedida: exporta solo las
+        # columnas que están en pantalla, y las impresiones no son de fábrica.
         print(f'  es un export de Studio ({tipo}) pero no trae impresiones ni CTR.')
-        print(f'    columnas: {", ".join(c.strip() for c in cab if c.strip())}')
+        print(f'    columnas: {cols}')
         print('    Volvé a bajarlo desde MODO AVANZADO agregando las columnas '
               '"Impresiones"\n    y "Porcentaje de clics de las impresiones".')
         return []

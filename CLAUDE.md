@@ -15,19 +15,26 @@ Cuando el usuario pida **el prompt del lunes**, el **prompt del CTR**, o algo
 equivalente: leé `PROMPT_CTR.md` y devolvéle los pasos 1 a 3, cortos. No lo
 reescribas de memoria: está afinado y probado.
 
-Son tres minutos: dos descargas del botón de exportar de Studio (pestaña
-**Contenido → Videos** y pestaña **Fecha**, las dos con el **rango completo**),
-`ctr_actualizar.py` con los dos zip, y `git push`. El push dispara el workflow
+Son tres minutos: dos descargas de Modo avanzado —pestaña **Fecha** de los
+**últimos 15 días**, y pestaña **Contenido** del **rango completo ordenada por
+fecha de publicación**—, `ctr_revisar.py` para confirmar que alcanzan,
+`ctr_actualizar.py` para cargarlas, y `git push`. El push dispara el workflow
 solo.
+
+**Revisar antes de cargar, siempre.** `ctr_revisar.py` no escribe nada y dice
+qué falta; `ctr_actualizar.py` escribe y hay que revertir si salió mal. Ese
+orden es la diferencia entre encontrar un problema en diez segundos o después de
+ensuciar el histórico.
 
 La extensión de Chrome aparece dos veces y no son lo mismo: en el paso 1 para
 **apretar los botones de descarga**, que hace bien y es lo que conviene
 ofrecerle; y en el plan B del final para **leer la tabla**, que es frágil y va
 solo si el botón no está.
 
-**La tabla de videos va completa todos los lunes.** Un día cerrado no cambia,
-pero un video acumula impresiones para siempre: traer solo lo nuevo deja los
-viejos clavados en la cifra de la semana pasada y el panel se despega de Studio.
+**La tabla de videos va completa todos los lunes; la de días, no.** Un día
+cerrado no cambia nunca, así que alcanza con los nuevos. Un video, en cambio,
+acumula impresiones para siempre: traer solo los nuevos deja a los viejos
+clavados en la cifra de la semana pasada y el panel se despega de Studio.
 
 Existe porque el API de YouTube **no entrega impresiones ni CTR** —responde
 `The query is not supported`, probado con permisos de dueño en tres formas
@@ -133,8 +140,11 @@ llegaron a mano o por API. Mantener esa compatibilidad al tocarlo.
 - **Pedirle a Studio una tabla muy larga.** Corta sin avisar: 995 días
   volvieron 500. No es un número exacto —un export de 501 filas vino entero—,
   así que contar filas no alcanza: por eso existe `ctr_revisar.py`, que mira qué
-  falta en vez de cuánto vino. Dentro del zip, `Totales.csv` puede traer la
-  serie entera aunque la tabla venga cortada; se lee también.
+  falta en vez de cuánto vino. Dentro del zip vienen tres CSV y solo uno sirve:
+  `Datos de la tabla.csv` es la tabla —cortada—, `Totales.csv` es la serie del
+  gráfico (todas las fechas pero una métrica sola, sin CTR) y `Datos del
+  gráfico.csv` es un cruce fecha × video. Los tres se leen y se descartan por
+  sus columnas, no por el nombre.
 - **Bajar desde la vista simple de Estadísticas.** Exporta solo las columnas que
   están en pantalla, y las impresiones no están entre las de fábrica. Tiene que
   ser Modo avanzado, con las dos columnas agregadas a mano.

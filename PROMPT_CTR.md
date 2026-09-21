@@ -30,29 +30,37 @@ Ya en Modo avanzado, agregá las columnas que faltan: el **+** a la derecha de
 los encabezados de la tabla → **Impresiones** y **Porcentaje de clics de las
 impresiones**.
 
-### Studio corta en 500 filas
+### Qué trae el zip de Studio
 
-No avisa: entrega el archivo como si estuviera entero. Por eso cada descarga va
-armada para quedar por debajo de esa raya, y por eso el histórico original se
-armó con la serie diaria partida en pedazos (del 2024-01-01 al 2025-05-15 hay
-500 días justos). El cargador lo detecta y avisa, pero conviene no llegar ahí.
+Adentro vienen varios CSV y solo uno sirve:
+
+| Archivo | Qué es |
+|---------|--------|
+| `Datos de la tabla.csv` | la tabla. **Es el que importa**, y viene **cortado en 500 filas** |
+| `Totales.csv` | la serie del gráfico: todas las fechas, pero una métrica sola, sin CTR |
+| `Datos del gráfico.csv` | un cruce fecha × video, inservible acá |
+
+Studio corta las tablas largas sin avisar: 995 días volvieron 500. Por eso las
+dos descargas van armadas para no acercarse a esa raya. No hay que abrir ni
+tocar nada: el cargador los lee todos y se queda con el que sirve.
 
 ### Las dos descargas
 
-**1 · Pestaña Fecha** — período **1 de enero del año en curso → hoy**.
+**1 · Pestaña Fecha** — período **los últimos 15 días**.
 
-No el rango completo: los años cerrados ya están en el histórico y no cambian,
-y pedirlos de nuevo pasa de 500 filas. El año en curso son unos 270 días, entra
-cómodo, y de paso se recorrige solo si YouTube reajustó algo hacia atrás.
+No el rango completo. Un día cerrado no cambia nunca, así que los que ya están
+en el histórico están bien para siempre; solo hacen falta los nuevos. Quince
+días son quince filas, ni cerca del corte, y dejan margen por si alguna semana
+te la salteás.
 
 **2 · Pestaña Contenido** — período **1 de enero de 2024 → hoy**, y **ordená la
 tabla por "Tiempo de publicación del video", los más nuevos primero**.
 
-Acá sí va el rango completo, porque el histórico guarda el acumulado de cada
-video. El orden es lo que salva las 500 filas: los videos del panel son unos
-290, así que ordenados por fecha de publicación entran todos antes del corte.
-Sin ordenar, el export se llena de videos de 2017 y se saltea los nuevos, que
-son justo los que interesan.
+Acá sí va el rango completo, porque un video acumula impresiones para siempre y
+el histórico guarda ese acumulado. El orden es lo que salva las 500 filas: los
+videos del panel son unos 290, así que ordenados por fecha de publicación entran
+todos antes del corte. Sin ordenar, el export se llena de videos de 2017 —pasó,
+282 de las 500 filas— y se saltea los nuevos, que son los que interesan.
 
 En cada una, el botón **Descargar** → **Valores separados por comas (.csv)**.
 Bajan dos `.zip` a `~/Downloads`.

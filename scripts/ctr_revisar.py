@@ -59,9 +59,12 @@ def main():
     if not rutas:
         sys.exit('Pasame los archivos: python3 scripts/ctr_revisar.py ~/Downloads/*.zip')
 
-    filas = []
+    filas, sirven = [], []
     for r in rutas:
-        filas += describir(r)
+        aporta = describir(r)
+        if aporta:
+            filas += aporta
+            sirven.append(r)
 
     dias = {c: (i, t) for tp, c, i, t in filas if tp == 'dia'}
     vids = {c: (i, t) for tp, c, i, t in filas if tp == 'video'}
@@ -132,8 +135,10 @@ def main():
         print('\n  No cargues todavía: falta material.')
         return 1
     print('  Sirve. Cargalo con:')
+    # Solo los que aportaron: nombrar los demás invita a arrastrar un archivo
+    # de más la próxima vez, que es como entró todo 2023 al histórico.
     print('    python3 scripts/ctr_actualizar.py ' +
-          ' '.join(f'"{r}"' for r in rutas))
+          ' '.join(f'"{r}"' for r in sirven))
     return 0
 
 
