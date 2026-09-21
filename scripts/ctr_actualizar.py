@@ -29,6 +29,10 @@ RAIZ = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 HISTORICO = os.path.join(RAIZ, 'data', 'historico')
 ARCHIVOS = {'dia': 'impresiones_dias.csv', 'video': 'impresiones_videos.csv'}
 CLAVE = {'dia': 'fecha', 'video': 'id'}
+# El histórico de videos es ACUMULADO desde la publicación. Si llega un export
+# de "últimos 28 días", las impresiones vienen mucho más chicas y pisarlas borra
+# años de datos. Por debajo de este umbral se asume que el período está mal.
+CAIDA_SOSPECHOSA = 0.5
 
 
 def num(v):
@@ -159,7 +163,18 @@ def main():
             continue
         datos = cargar(tipo)
         nuevos = cambiados = iguales = 0
+        sospechosos = []
         for _, clave, imp, ctr in propias:
+            # Un día es un día: su cifra no crece. Un video sí acumula, así que
+            # que baje quiere decir que el período no es el mismo.
+            if tipo == 'video' and clave in datos:
+                try:
+                    antes = float(datos[clave][0])
+                except (TypeError, ValueError):
+                    antes = 0
+                if antes and imp < antes * CAIDA_SOSPECHOSA:
+                    sospechosos.append((clave, antes, imp))
+                    continue
             # el histórico guarda clicks, no el porcentaje: así el CTR de un
             # período es suma(clicks)/suma(impresiones) y no un promedio de CTRs
             fila = [str(int(imp)), str(round(imp * ctr / 100, 4))]
@@ -173,6 +188,16 @@ def main():
         guardar(tipo, datos)
         print(f'{ARCHIVOS[tipo]}: {len(datos)} en total '
               f'(+{nuevos} nuevos, {cambiados} actualizados, {iguales} sin cambio)')
+        if sospechosos:
+            print(f'\n  {len(sospechosos)} video(s) NO se tocaron: traían menos de '
+                  f'la mitad de las impresiones guardadas.')
+            print('  El histórico es acumulado desde la publicación. Si el export '
+                  'salió\n  con "últimos 28 días", pedilo de nuevo con el rango '
+                  'completo.')
+            for k, a, b in sospechosos[:5]:
+                print(f'    {k}  {a:,.0f} -> {b:,.0f}'.replace(',', '.'))
+            if len(sospechosos) > 5:
+                print(f'    ...y {len(sospechosos) - 5} más')
 
     print('\nListo. Para que el panel lo tome:')
     print('  git add data/historico && git commit -m "CTR al '

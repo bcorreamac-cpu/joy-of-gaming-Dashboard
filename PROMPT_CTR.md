@@ -18,7 +18,14 @@ https://studio.youtube.com
 
 Menú izquierdo → **Estadísticas** → pestaña **Contenido**.
 
-Arriba a la derecha, poné el período en **Últimos 28 días**.
+Arriba a la derecha, el período tiene que ser **el rango completo**:
+**Personalizado → desde 2024-01-01 hasta hoy**. Si hay una opción tipo
+*Máximo*, *Todo el tiempo* o *Desde la publicación*, también sirve.
+
+> **Esto no es un detalle.** El histórico guarda el acumulado de cada video
+> desde que salió. Si el export sale con "últimos 28 días", las impresiones
+> vienen mucho más chicas y pisarían años de datos con una ventana de un mes.
+> El script lo detecta y frena, pero es tiempo perdido.
 
 ---
 
@@ -56,8 +63,10 @@ Arriba a la derecha, poné el período en **Últimos 28 días**.
 
 ## 3. Para el CTR del canal por día (opcional)
 
-En la misma pantalla, pestaña **Fecha** en vez de Contenido. Mismo prompt,
-cambiando la primera columna:
+En la misma pantalla, pestaña **Fecha** en vez de Contenido. Acá sí conviene un
+período corto —la última semana o el último mes—, porque cada fila es un día y
+un día no acumula: su cifra ya no cambia. Mismo prompt, cambiando la primera
+columna:
 
 > Igual que antes, pero es la tabla por fecha. La primera columna dice `dia`
 > literal, y la clave es la fecha en formato `YYYY-MM-DD`:
@@ -107,6 +116,10 @@ No hace falta que el CSV venga perfecto:
 - **Filas repetidas o ya cargadas.** Se pisan sin duplicar nada.
 - **Basura.** Fechas con formato raro, CTR imposibles y títulos que no existen
   en el catálogo se descartan, y el script dice cuáles.
+- **Videos anteriores a 2024.** El panel arranca en 2024, así que los más viejos
+  no están en el catálogo y quedan afuera. Es normal ver varias decenas.
+- **El período equivocado.** Si un video trae menos de la mitad de las
+  impresiones guardadas, no se pisa: el script avisa y lo deja como estaba.
 
 Es incremental: lo que mandes se suma a lo que ya había. Podés cargar diez
 videos una semana y el catálogo entero la siguiente.
