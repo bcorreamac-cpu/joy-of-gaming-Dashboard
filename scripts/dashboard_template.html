@@ -186,6 +186,18 @@ section{margin-top:34px;scroll-margin-top:70px}
 .tip .tr i{width:12px;height:2px;border-radius:1px;flex:none}
 .tip .tr b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
 
+/* ── resumen mes a mes ──────────────────────────────────── */
+/* La barra va detrás del número, no en una columna aparte: ocupa lo mismo y
+   deja ver la forma de la serie sin tener que leer fila por fila. */
+.mm-b{position:relative;display:block}
+.mm-b i{position:absolute;left:0;top:50%;transform:translateY(-50%);height:15px;
+  border-radius:0 3px 3px 0;background:var(--s1);opacity:.22;z-index:0}
+.mm-b span{position:relative;z-index:1}
+#t-mm td.l{font-variant-numeric:tabular-nums}
+#t-mm tr.parcial td{opacity:.62}
+.mm-d{font:500 11.5px var(--mono);white-space:nowrap}
+.mm-d.up{color:var(--good)}.mm-d.dn{color:var(--crit)}.mm-d.flat{color:var(--muted)}
+
 /* ── tablas ─────────────────────────────────────────────── */
 .tw{overflow-x:auto;margin:0 -15px;padding:0 15px}
 table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:620px}
@@ -305,10 +317,24 @@ footer li{margin-bottom:6px;line-height:1.5}
     <div class="grid kpis" id="kpis" style="margin-top:13px"></div>
   </section>
 
+  <!-- ── mes a mes ── -->
+  <section id="mesames">
+    <div class="sh">
+      <div><div class="eyebrow">02 · Mes a mes</div><h2>Cómo viene el canal</h2></div>
+      <p class="sub" id="mm-sub"></p>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3>Resumen mensual</h3>
+        <button class="link" id="b-exp-mm">Exportar CSV</button></div>
+      <div class="tw"><table id="t-mm"></table></div>
+      <p class="mini" style="margin:12px 0 0" id="mm-nota"></p>
+    </div>
+  </section>
+
   <!-- ── evolución ── -->
   <section id="evo">
     <div class="sh">
-      <div><div class="eyebrow">02 · Serie temporal</div><h2>Evolución</h2></div>
+      <div><div class="eyebrow">03 · Serie temporal</div><h2>Evolución</h2></div>
       <p class="sub" id="evo-sub"></p>
     </div>
     <div class="panel">
@@ -333,7 +359,7 @@ footer li{margin-bottom:6px;line-height:1.5}
   <!-- ── comparación ── -->
   <section id="comp">
     <div class="sh">
-      <div><div class="eyebrow">03 · Comparación</div><h2>Períodos enfrentados</h2></div>
+      <div><div class="eyebrow">04 · Comparación</div><h2>Períodos enfrentados</h2></div>
       <p class="sub" id="comp-sub"></p>
     </div>
     <div class="panel"><div class="chart" id="c-comp"></div><div class="legend" id="comp-leg"></div></div>
@@ -342,7 +368,7 @@ footer li{margin-bottom:6px;line-height:1.5}
   <!-- ── categorías ── -->
   <section id="cats">
     <div class="sh">
-      <div><div class="eyebrow">04 · Contenido</div><h2>Performance por categoría</h2></div>
+      <div><div class="eyebrow">05 · Contenido</div><h2>Performance por categoría</h2></div>
       <p class="sub" id="cats-sub"></p>
     </div>
     <div class="grid g2">
@@ -362,7 +388,7 @@ footer li{margin-bottom:6px;line-height:1.5}
   <!-- ── qué repetir ── -->
   <section id="juegos">
     <div class="sh">
-      <div><div class="eyebrow">05 · Qué repetir</div><h2>Ranking de juegos</h2></div>
+      <div><div class="eyebrow">06 · Qué repetir</div><h2>Ranking de juegos</h2></div>
       <p class="sub" id="juegos-sub"></p>
     </div>
     <div class="panel">
@@ -376,7 +402,7 @@ footer li{margin-bottom:6px;line-height:1.5}
   <!-- ── datos ── -->
   <section id="datos">
     <div class="sh">
-      <div><div class="eyebrow">06 · Datos</div><h2>Tabla del período</h2></div>
+      <div><div class="eyebrow">07 · Datos</div><h2>Tabla del período</h2></div>
       <p class="sub">Los números detrás de cada gráfico. Ordená por cualquier columna.</p>
     </div>
     <div class="panel">
@@ -964,6 +990,71 @@ function porCategoria(){
     share:o.vistas/tot*100, chico:o.n<8}));
 }
 
+/* ── resumen mes a mes ─────────────────────────────────────
+   Siempre los últimos 12 meses del canal, sin importar el filtro ni el switch:
+   es la foto de "cómo venimos" y tiene que decir lo mismo cada vez que se abre.
+   Los videos publicados van al lado del resultado a propósito: es la única
+   forma de ver si publicar más movió la aguja. */
+const MM_MESES = 12;
+function mesAMes(){
+  const pub = new Map(), ix = new Map();
+  // Publicados cuenta TODO lo que salió ese mes. El índice, en cambio, solo
+  // mira los que ya llevan MIN_DIAS: un video de ayer no tiene con qué rendir.
+  for(const v of VIDEOS_TODOS){
+    const k = v.pub.slice(0,7);
+    pub.set(k, (pub.get(k)||0)+1);
+  }
+  for(const v of VIDEOS){
+    if(v.ix==null) continue;
+    const k = v.pub.slice(0,7);
+    if(!ix.has(k)) ix.set(k,[]);
+    ix.get(k).push(v.ix);
+  }
+  const ult = MESES.slice(-MM_MESES);
+  return ult.map((m,i)=>{
+    const ant = ult[i-1];
+    return {
+      p:m.p, v:m.v||0, i:m.i||0,
+      ctr: m.i ? m.c/m.i*100 : null,
+      sn: m.sn??((m.sg||0)-(m.sp||0)),
+      ing: m.ing||0,
+      n: pub.get(m.p)||0,
+      ixm: ix.has(m.p) ? mediana(ix.get(m.p)) : null,
+      dv: ant && ant.v ? (m.v/ant.v-1)*100 : null,
+      parcial: PARCIALES.has(m.p),
+    };
+  });
+}
+const COLS_MM = [
+  ['p','Mes','l'], ['v','Vistas'], ['dv','vs. mes ant.'], ['ctr','CTR'],
+  ['sn','Subs netos'], ['ing','Ingresos'], ['n','Publicados'], ['ixm','Índice del lote'],
+];
+function tablaMM(filas){
+  const tope = Math.max(1, ...filas.map(f=>f.v));
+  const delta = d => d==null ? '<span class="mm-d flat">—</span>'
+    : `<span class="mm-d ${Math.abs(d)<1?'flat':d>0?'up':'dn'}">`
+      + `${d>0?'▲':d<0?'▼':'■'} ${fmt(Math.abs(d),0)} %</span>`;
+  const celda = (f,k) => {
+    if(k==='p') return `<td class="l">${esc(rotuloMes(f.p))}`
+      + (f.parcial?' <span class="tag warn">parcial</span>':'') + '</td>';
+    if(k==='v') return `<td class="num"><span class="mm-b">`
+      + `<i style="width:${(f.v/tope*100).toFixed(1)}%"></i>`
+      + `<span>${compact(f.v)}</span></span></td>`;
+    if(k==='dv')  return `<td class="num">${delta(f.dv)}</td>`;
+    if(k==='ctr') return `<td class="num">${f.ctr==null?'—':fmt(f.ctr,1)+' %'}</td>`;
+    if(k==='ing') return `<td class="num">US$ ${fmt(f.ing,0)}</td>`;
+    if(k==='ixm') return `<td class="num">${f.ixm==null
+      ? (f.n ? '<span class="mini">muy nuevos</span>' : '—')
+      : fmt(f.ixm,2)+'x'}</td>`;
+    return `<td class="num">${fmt(f[k],0)}</td>`;
+  };
+  $('t-mm').innerHTML =
+    `<thead><tr>${COLS_MM.map(([k,t,cl])=>`<th class="${cl||''}">${t}</th>`).join('')}</tr></thead>`
+    + `<tbody>${filas.map(f=>`<tr class="${f.parcial?'parcial':''}">`
+        + COLS_MM.map(([k])=>celda(f,k)).join('') + '</tr>').join('')}</tbody>`;
+}
+const rotuloMes = p => MESL[+p.slice(5,7)-1] + ' ' + p.slice(0,4);
+
 /* ── 6. render ───────────────────────────────────────────── */
 let ULT={filas:[],cats:[]};
 function render(){
@@ -1067,6 +1158,21 @@ function render(){
            : 'Ninguno se despega claramente de lo normal.')
       : '';
   }
+
+  /* mes a mes */
+  const mm = mesAMes();
+  tablaMM(mm);
+  $('mm-sub').textContent = `Los últimos ${mm.length} meses del canal, siempre `
+    + 'los mismos: esta tabla no sigue los filtros ni el switch, para que diga '
+    + 'lo mismo cada vez que abrís el panel.';
+  const cerrados = mm.filter(f=>!f.parcial);
+  const masPub = cerrados.length>2
+    ? cerrados.reduce((a,b)=>b.n>a.n?b:a) : null;
+  $('mm-nota').innerHTML = masPub && masPub.n>0
+    ? `El mes con más videos publicados fue <b>${esc(rotuloMes(masPub.p))}</b> `
+      + `(${masPub.n}), y terminó con <b>${fmt(masPub.sn,0)}</b> suscriptores netos. `
+      + 'Vale la pena mirar esa fila contra las de arriba: publicar más no siempre mueve el resultado.'
+    : '';
 
   tablaDatos(filas,m);
   avisos(filas,tot);
@@ -1301,6 +1407,9 @@ $('b-reset').onclick=()=>{
   render()};
 $('b-exp-cat').onclick=()=>csv(`joy-categorias-${S.modo}-${Date.now()}.csv`,
   COLS_CAT.map(c=>c[1]),ULT.cats.map(c=>COLS_CAT.map(([k])=>k==='cat'?catL(c.cat):c[k])));
+$('b-exp-mm').onclick=()=>csv(`joy-mes-a-mes-${Date.now()}.csv`,
+  COLS_MM.map(c=>c[1]),
+  mesAMes().map(f=>COLS_MM.map(([k])=>k==='p'?rotuloMes(f.p):f[k])));
 $('b-exp-datos').onclick=()=>csv(`joy-serie-${S.modo}-${S.gran}-${Date.now()}.csv`,
   ULT.colsDatos.map(c=>c[1]),ULT.filas.map(r=>ULT.colsDatos.map(([k])=>k==='k'?rotulo(r.k):r[k])));
 

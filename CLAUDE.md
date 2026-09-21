@@ -59,6 +59,9 @@ llegaron a mano o por API. Mantener esa compatibilidad al tocarlo.
   Dos videos publicados con días de diferencia tienen que caer en la misma base.
 - **CTR = suma(clicks) ÷ suma(impresiones).** Nunca el promedio de CTR.
   Por eso el histórico guarda clicks y no porcentajes.
+- **El CTR siempre va atrás del resto.** Se carga a mano, así que los últimos
+  días y los videos más nuevos no tienen impresiones. Eso es la frontera normal,
+  no un agujero: lo que `validar.py` rechaza es un hueco en el medio.
 - **Nada de números fijos en los chequeos.** Esto corre todas las semanas: todo
   lo que dependa del rango se deriva del rango.
 - **La paleta está validada** (banda de luminosidad, croma, daltonismo,

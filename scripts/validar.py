@@ -74,11 +74,19 @@ for c in ('v','sg','sp'):
 # Impresiones y CTR: el API los expone desde enero 2026 y el descargador sigue
 # adelante sin ellos si los rechaza. Que falten en TODOS los días es un modo
 # degradado conocido; que falten en algunos es un agujero de verdad.
-sin_imp = sum(1 for d in dias if d['i'] is None)
-if sin_imp == len(dias):
+# El CTR se carga a mano y siempre va atrás de los datos que trae el API, así
+# que los días sin impresiones son los del final: la frontera entre lo medido y
+# lo que falta. Un hueco en el medio, en cambio, sí es un problema.
+faltan_i = [i for i, d in enumerate(dias) if d['i'] is None]
+if len(faltan_i) == len(dias):
     avisos.append(f"ningún día trae impresiones ({len(dias)}): el panel queda sin CTR")
+elif faltan_i:
+    al_final = faltan_i == list(range(len(dias) - len(faltan_i), len(dias)))
+    chk(al_final,
+        f"los {len(faltan_i)} días sin impresiones son los últimos "
+        f"({dias[faltan_i[0]]['f']} → {dias[faltan_i[-1]]['f']}): falta cargar el CTR")
 else:
-    chk(sin_imp == 0, f"días con impresiones nulas: {sin_imp} de {len(dias)}")
+    avisos.append("todos los días traen impresiones")
 nulo_ing = sorted(d['f'] for d in dias if d['ing'] is None)
 chk(nulo_ing == meta['dias_sin_ingresos'],
     f"días sin ingresos liquidados: {nulo_ing or 'ninguno'} (declarados en meta)")
@@ -88,11 +96,19 @@ for c in ('v','sg'):
     n = sum(1 for v in vids if v[c] is None)
     chk(n == 0, f"videos con {c} nulo: {n}")
 # misma regla que en los días: todo o nada
-sin_iv = sum(1 for v in vids if v['i'] is None)
-if sin_iv == len(vids):
+# Misma idea en videos: los que no tienen impresiones son los más nuevos,
+# publicados después del último CTR cargado a mano.
+sin_iv = [v for v in vids if v['i'] is None]
+if len(sin_iv) == len(vids):
     avisos.append(f"ningún video trae impresiones ({len(vids)})")
+elif sin_iv:
+    corte_i = max((v['pub'] for v in vids if v['i'] is not None), default='')
+    tarde = [v for v in sin_iv if v['pub'] < corte_i]
+    chk(not tarde,
+        f"los {len(sin_iv)} videos sin impresiones son los más nuevos "
+        f"(desde {min(v['pub'] for v in sin_iv)})")
 else:
-    chk(sin_iv == 0, f"videos con impresiones nulas: {sin_iv} de {len(vids)}")
+    avisos.append("todos los videos traen impresiones")
 
 # ── 4. contra las filas "Total" de los propios exports ────────────────
 def totales(patron, campos):
