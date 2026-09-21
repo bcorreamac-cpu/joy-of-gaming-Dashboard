@@ -12,21 +12,28 @@ cuando se puede evitar.
 ## "Dame el prompt del lunes"
 
 Cuando el usuario pida **el prompt del lunes**, el **prompt del CTR**, o algo
-equivalente: leé `PROMPT_CTR.md` y devolvéle el **bloque del paso 2** listo para
-copiar y pegar en la extensión de Claude en Chrome, más los comandos del paso 5.
-No lo reescribas de memoria: está afinado y probado.
+equivalente: leé `PROMPT_CTR.md` y devolvéle los pasos 1 a 3, cortos. No lo
+reescribas de memoria: está afinado y probado.
 
-Es una rutina semanal de unos cinco minutos. Existe porque el API de YouTube
-**no entrega impresiones ni CTR** —responde `The query is not supported`,
-probado con permisos de dueño en tres formas distintas— y todo lo demás sí se
-actualiza automáticamente.
+Son tres minutos: dos descargas del botón de exportar de Studio (pestaña
+**Contenido → Videos** y pestaña **Fecha**, las dos con el **rango completo**),
+`ctr_actualizar.py` con los dos zip, y `git push`. El push dispara el workflow
+solo. La extensión de Chrome quedó como plan B, al final del archivo.
+
+**La tabla de videos va completa todos los lunes.** Un día cerrado no cambia,
+pero un video acumula impresiones para siempre: traer solo lo nuevo deja los
+viejos clavados en la cifra de la semana pasada y el panel se despega de Studio.
+
+Existe porque el API de YouTube **no entrega impresiones ni CTR** —responde
+`The query is not supported`, probado con permisos de dueño en tres formas
+distintas— y todo lo demás sí se actualiza automáticamente.
 
 ---
 
 ## Cómo funciona
 
 ```
-.github/workflows/actualizar.yml   lunes 11:00 UTC: baja, valida y publica
+.github/workflows/actualizar.yml   lunes 11:00 UTC (y al subir CTR): publica
 .github/workflows/latido.yml       diario: avisa si el permiso de Google caducó
 scripts/yt_descargar.py            APIs de YouTube -> data/entrada/*.csv
 scripts/build_analytics.py         CSV -> data/analytics.json
@@ -59,6 +66,10 @@ llegaron a mano o por API. Mantener esa compatibilidad al tocarlo.
   Dos videos publicados con días de diferencia tienen que caer en la misma base.
 - **CTR = suma(clicks) ÷ suma(impresiones).** Nunca el promedio de CTR.
   Por eso el histórico guarda clicks y no porcentajes.
+- **Lo manual pide solo impresiones y CTR.** Vistas, suscriptores, tiempo de
+  reproducción, ingresos, RPM, duración promedio y porcentaje reproducido llegan
+  por API y cuadran. Dos fuentes para el mismo número es la forma más rápida de
+  que el panel deje de cerrar.
 - **El CTR siempre va atrás del resto.** Se carga a mano, así que los últimos
   días y los videos más nuevos no tienen impresiones. Eso es la frontera normal,
   no un agujero: lo que `validar.py` rechaza es un hueco en el medio.

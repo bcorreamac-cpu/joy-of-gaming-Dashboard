@@ -5,6 +5,13 @@ name: Actualizar el panel
 on:
   schedule:
     - cron: '0 11 * * 1'
+  # El CTR se carga a mano (el API no lo entrega). Subirlo alcanza para que el
+  # panel se rehaga solo: no hace falta ir a Actions a apretar nada. No se cicla
+  # porque lo que este workflow commitea no está en data/historico.
+  push:
+    branches: [main]
+    paths:
+      - 'data/historico/**'
   workflow_dispatch:
     inputs:
       hasta:
