@@ -30,12 +30,29 @@ Ya en Modo avanzado, agregá las columnas que faltan: el **+** a la derecha de
 los encabezados de la tabla → **Impresiones** y **Porcentaje de clics de las
 impresiones**.
 
-Después, dos descargas:
+### Studio corta en 500 filas
 
-| # | Pestaña | Qué trae |
-|---|---------|----------|
-| 1 | **Vídeo** | impresiones y CTR de cada video |
-| 2 | **Fecha** | impresiones y CTR del canal, día por día |
+No avisa: entrega el archivo como si estuviera entero. Por eso cada descarga va
+armada para quedar por debajo de esa raya, y por eso el histórico original se
+armó con la serie diaria partida en pedazos (del 2024-01-01 al 2025-05-15 hay
+500 días justos). El cargador lo detecta y avisa, pero conviene no llegar ahí.
+
+### Las dos descargas
+
+**1 · Pestaña Fecha** — período **1 de enero del año en curso → hoy**.
+
+No el rango completo: los años cerrados ya están en el histórico y no cambian,
+y pedirlos de nuevo pasa de 500 filas. El año en curso son unos 270 días, entra
+cómodo, y de paso se recorrige solo si YouTube reajustó algo hacia atrás.
+
+**2 · Pestaña Contenido** — período **1 de enero de 2024 → hoy**, y **ordená la
+tabla por "Tiempo de publicación del video", los más nuevos primero**.
+
+Acá sí va el rango completo, porque el histórico guarda el acumulado de cada
+video. El orden es lo que salva las 500 filas: los videos del panel son unos
+290, así que ordenados por fecha de publicación entran todos antes del corte.
+Sin ordenar, el export se llena de videos de 2017 y se saltea los nuevos, que
+son justo los que interesan.
 
 En cada una, el botón **Descargar** → **Valores separados por comas (.csv)**.
 Bajan dos `.zip` a `~/Downloads`.
@@ -98,8 +115,16 @@ python3 scripts/ctr_actualizar.py ~/Downloads/"Fecha 2024-01-01_2026-09-22 Joy O
 ```
 
 La salida dice qué archivo está leyendo, cuántos videos y días entraron, **de qué
-fecha a qué fecha**, y cuáles no reconoció. El rango es lo que hay que mirar: los
-conteos solos no delatan un período equivocado.
+fecha a qué fecha**, y cuáles no reconoció. Tres cosas que hay que mirar:
+
+- **El rango de días.** Tiene que llegar hasta hace dos o tres días. Los conteos
+  solos no delatan un período equivocado: un día de más se ve igual que uno de
+  menos.
+- **La cobertura del panel.** Dice cuántos de los videos que el panel muestra
+  quedaron con impresiones. Ese número, no la cantidad de filas del export, es
+  el que dice si la descarga sirvió.
+- **El aviso de 500 filas.** Si aparece, el export está cortado y hay que
+  rehacerlo más chico.
 
 ---
 
