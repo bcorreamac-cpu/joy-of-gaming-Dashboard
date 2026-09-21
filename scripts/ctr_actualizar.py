@@ -1,5 +1,7 @@
 """Mete CTR nuevo en el histórico congelado.
 
+    python3 scripts/ctr_actualizar.py ~/Downloads/*.zip     (las dos pestañas de una)
+    python3 scripts/ctr_actualizar.py ~/Downloads/videos.zip ~/Downloads/dias.zip
     python3 scripts/ctr_actualizar.py ctr.csv
     pbpaste | python3 scripts/ctr_actualizar.py      (pegando desde el portapapeles)
 
@@ -7,7 +9,17 @@ El API de YouTube no entrega impresiones ni CTR, así que esa parte se junta a
 mano desde YouTube Studio —con la extensión de Claude en Chrome, con el prompt
 de PROMPT_CTR.md— y se guarda acá. El resto del panel se sigue actualizando solo.
 
-Formato de entrada, una fila por medición:
+Entiende dos formatos.
+
+El mejor es el **export nativo de Studio**: el botón de descargar de la pantalla
+de Estadísticas, tal cual sale, sea el .zip o el .csv de adentro. Trae el ID de
+cada video, así que no hay títulos que adivinar, y no depende de que nadie lea
+bien una tabla de trescientas filas. Sirven tanto la pestaña Contenido como la
+de Fecha, y los encabezados se buscan por palabra suelta para aguantar que
+Studio exporte en español o en inglés.
+
+El otro es una fila por medición, para cuando los datos vienen a mano o de la
+extensión del navegador:
 
     tipo,clave,impresiones,ctr
     dia,2026-09-20,242829,6.92
@@ -22,7 +34,7 @@ queda intacto. Podés mandar diez filas o el catálogo entero.
 
 Solo biblioteca estándar.
 """
-import csv, json, os, re, sys
+import csv, json, os, re, sys, zipfile
 from datetime import date
 
 RAIZ = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
@@ -84,13 +96,108 @@ def normalizar(t):
 
 ES_ID = re.compile(r'[A-Za-z0-9_-]{11}$')
 
+MESES = {m: i for i, m in enumerate(
+    ['ene:jan', 'feb', 'mar', 'abr:apr', 'may', 'jun', 'jul', 'ago:aug',
+     'sep:set', 'oct', 'nov', 'dic:dec'], 1)
+    for m in m.split(':')}
 
-def leer_entrada(ruta=None):
-    """Filas del archivo o de la entrada estándar, tolerando encabezado."""
-    texto = open(ruta, encoding='utf-8-sig').read() if ruta else sys.stdin.read()
+
+def a_fecha(v):
+    """'2026-09-14', 'Sep 14, 2026' o '14 sept 2026' -> 'YYYY-MM-DD', o ''.
+
+    Studio exporta la fecha en el idioma de la cuenta y a veces cambia de forma
+    sin avisar, así que se aceptan las tres que se vieron.
+    """
+    v = (v or '').strip().strip('"')
+    if re.fullmatch(r'\d{4}-\d{2}-\d{2}', v):
+        return v
+    m = (re.match(r'([A-Za-z]{3})\w*\.?\s+(\d{1,2}),?\s+(\d{4})', v)      # Sep 14, 2026
+         or re.match(r'(\d{1,2})\s+(?:de\s+)?([A-Za-z]{3})\w*\.?\s+(?:de\s+)?(\d{4})', v))
+    if not m:
+        return ''
+    a, b, anio = m.groups()
+    mes, dia = (a, b) if a[0].isalpha() else (b, a)
+    n = MESES.get(mes.lower())
+    return f'{int(anio):04d}-{n:02d}-{int(dia):02d}' if n else ''
+
+
+def textos(ruta):
+    """El contenido de cada CSV: el archivo suelto, o los que traiga el zip.
+
+    El botón de descargar de Studio da un .zip con varios CSV adentro. Pedirle
+    al usuario que lo abra y busque el correcto es una oportunidad más de
+    equivocarse: se lee tal cual bajó.
+    """
+    if ruta and zipfile.is_zipfile(ruta):
+        with zipfile.ZipFile(ruta) as z:
+            csvs = [n for n in z.namelist() if n.lower().endswith('.csv')]
+            # Junto a la tabla vienen los totales del rango, que no son filas.
+            tabla = [n for n in csvs if 'total' not in n.lower()]
+            return [z.read(n).decode('utf-8-sig') for n in (tabla or csvs)]
+    if ruta:
+        return [open(ruta, encoding='utf-8-sig').read()]
+    return [sys.stdin.read()]
+
+
+def columna(cab, *alias):
+    """Índice de la primera columna cuyo nombre contenga alguno de los alias.
+
+    Por nombre y no por posición: Studio agrega y saca columnas según lo que
+    tengas elegido en pantalla, y traduce los encabezados.
+    """
+    for i, c in enumerate(cab):
+        bajo = c.strip().lower()
+        if any(a in bajo for a in alias):
+            return i
+    return None
+
+
+def como_export(filas):
+    """Export nativo de Studio -> tipo,clave,impresiones,ctr. [] si no lo es."""
+    if not filas:
+        return []
+    cab = filas[0]
+    i_imp = columna(cab, 'impresion', 'impression')
+    i_ctr = columna(cab, 'clic', 'click')
+    if i_imp is None or i_ctr is None:
+        return []
+    # La primera columna dice de qué tabla salió: el catálogo o la serie diaria.
+    if columna(cab, 'contenido', 'content') == 0:
+        tipo = 'video'
+    elif columna(cab, 'fecha', 'date') == 0:
+        tipo = 'dia'
+    else:
+        return []
+    out = []
+    for f in filas[1:]:
+        if len(f) <= max(i_imp, i_ctr):
+            continue
+        clave = f[0].strip()
+        # La fila de arriba resume el rango entero: no es un video ni un día.
+        if not clave or clave.lower() in ('total', 'totales', 'totals'):
+            continue
+        if tipo == 'dia':
+            clave = a_fecha(clave) or clave
+        out.append([tipo, clave, f[i_imp], f[i_ctr]])
+    return out
+
+
+def crudas(ruta):
+    """Todas las filas de entrada, venga el export de Studio o una lista."""
+    out = []
+    for texto in textos(ruta):
+        filas = [f for f in csv.reader(texto.splitlines()) if f]
+        # Si no es un export reconocible se deja pasar tal cual: abajo se filtra
+        # por la primera columna, así que la basura no llega a ningún lado.
+        out += como_export(filas) or filas
+    return out
+
+
+def leer_entrada(rutas=()):
+    """Filas de los archivos o de la entrada estándar, tolerando encabezado."""
     titulos, sin_resolver = indice_titulos(), []
     filas = []
-    for f in csv.reader(texto.splitlines()):
+    for f in [f for r in (rutas or [None]) for f in crudas(r)]:
         if len(f) < 4:
             continue
         tipo = f[0].strip().lower()
@@ -146,13 +253,14 @@ def guardar(tipo, datos):
 
 
 def main():
-    ruta = next((a for a in sys.argv[1:] if not a.startswith('-')), None)
-    if ruta and not os.path.exists(ruta):
-        sys.exit(f'No existe {ruta}.')
-    if not ruta and sys.stdin.isatty():
+    rutas = [a for a in sys.argv[1:] if not a.startswith('-')]
+    for r in rutas:
+        if not os.path.exists(r):
+            sys.exit(f'No existe {r}.')
+    if not rutas and sys.stdin.isatty():
         sys.exit(__doc__)
 
-    filas = leer_entrada(ruta)
+    filas = leer_entrada(rutas)
     if not filas:
         sys.exit('No se reconoció ninguna fila. Revisá el formato: '
                  'tipo,clave,impresiones,ctr')
@@ -202,7 +310,7 @@ def main():
     print('\nListo. Para que el panel lo tome:')
     print('  git add data/historico && git commit -m "CTR al '
           + date.today().isoformat() + '" && git push')
-    print('Y después corré el workflow "Actualizar el panel" en Actions.')
+    print('El push solo dispara la actualización del panel; tarda un par de minutos.')
 
 
 if __name__ == '__main__':

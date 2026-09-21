@@ -1,35 +1,102 @@
-# Prompt semanal para sacar el CTR
+# La rutina del lunes
 
-El API de YouTube no entrega impresiones ni CTR, así que esa parte se junta a
-mano una vez por semana con la extensión de Claude en Chrome. Todo lo demás del
-panel se actualiza solo los lunes.
+Todo el panel se actualiza solo, menos **impresiones y CTR**: el API de YouTube
+no los entrega. Eso se baja a mano una vez por semana, y toma unos tres minutos.
 
-Toma unos cinco minutos.
-
----
-
-## 1. Abrí YouTube Studio
-
-Entrá con la cuenta de **Joy of Gaming** a:
-
-```
-https://studio.youtube.com
-```
-
-Menú izquierdo → **Estadísticas** → pestaña **Contenido**.
-
-Arriba a la derecha, el período tiene que ser **el rango completo**:
-**Personalizado → desde 2024-01-01 hasta hoy**. Si hay una opción tipo
-*Máximo*, *Todo el tiempo* o *Desde la publicación*, también sirve.
-
-> **Esto no es un detalle.** El histórico guarda el acumulado de cada video
-> desde que salió. Si el export sale con "últimos 28 días", las impresiones
-> vienen mucho más chicas y pisarían años de datos con una ventana de un mes.
-> El script lo detecta y frena, pero es tiempo perdido.
+**La regla que importa:** la tabla de **videos va completa todos los lunes**, con
+el rango entero. No es capricho. Un día cerrado ya no cambia —el 14 de
+septiembre va a tener siempre las mismas impresiones—, pero un video **acumula
+para siempre**: los 288 del panel suman impresiones nuevas cada semana, incluso
+los de 2024. Si solo traés lo nuevo, los viejos quedan clavados en la cifra de
+la semana pasada y el panel se va despegando de Studio.
 
 ---
 
-## 2. Abrí la extensión de Claude y pegá este prompt
+## 1. Bajar los dos archivos de Studio
+
+Entrá con la cuenta de **Joy of Gaming** a <https://studio.youtube.com> →
+**Estadísticas** (menú izquierdo).
+
+Arriba a la derecha, poné el período en **Personalizado → desde 2024-01-01 hasta
+hoy**. Si aparece *Máximo* o *Todo el tiempo*, también sirve.
+
+Después, dos descargas:
+
+| # | Pestaña | Sub-pestaña | Qué trae |
+|---|---------|-------------|----------|
+| 1 | **Contenido** | **Videos** (no Shorts) | impresiones y CTR de cada video |
+| 2 | **Fecha** | — | impresiones y CTR del canal, día por día |
+
+En cada una, el botón **Descargar** (la flecha hacia abajo, arriba a la derecha)
+→ **Valores separados por comas (.csv)**. Bajan dos `.zip` a `~/Downloads`.
+
+> **No los abras ni los toques.** El script los lee tal cual, zip incluido, y
+> saca de adentro el archivo que corresponde.
+
+Si el botón de descargar no aparece, andá al **Plan B** del final.
+
+---
+
+## 2. Cargarlos
+
+```bash
+cd ~/Documents/joy-of-gaming-Dashboard
+git pull
+python3 scripts/ctr_actualizar.py ~/Downloads/*.zip
+```
+
+Te dice cuántos videos y cuántos días entraron, cuántos se actualizaron, y
+cuáles no reconoció.
+
+---
+
+## 3. Publicar
+
+```bash
+git add data/historico
+git commit -m "CTR al $(date +%F)"
+git push
+```
+
+Y listo: el push dispara la actualización del panel. En un par de minutos
+<https://bcorreamac-cpu.github.io/joy-of-gaming-Dashboard/> queda al día.
+
+---
+
+## Lo que pasa solo, sin que hagas nada
+
+- **Lunes 11:00 UTC**: se bajan del API vistas, suscriptores, tiempo de
+  reproducción, ingresos, RPM, duración promedio y porcentaje reproducido, del
+  canal y de cada video. Se valida, se compara contra lo publicado y se sube.
+- **Todos los días**: un chequeo avisa si el permiso de Google caducó.
+
+Por eso el paso manual **solo pide impresiones y CTR**: pedirle vistas a Studio
+sería duplicar algo que ya llega bien, y dos fuentes para el mismo número es la
+forma más rápida de que el panel deje de cuadrar.
+
+---
+
+## Lo que el script tolera solo
+
+- **El zip de Studio tal cual**, o el CSV de adentro, o una lista a mano.
+- **Español o inglés.** Busca las columnas por nombre, no por posición.
+- **Miles con punto o con coma**, y decimal con coma: `1.234.567` y `5,80`.
+- **Fechas en cualquiera de las tres formas** que usa Studio: `2026-09-14`,
+  `Sep 14, 2026`, `14 sept 2026`.
+- **Filas repetidas o ya cargadas.** Se pisan sin duplicar nada.
+- **Videos anteriores a 2024.** El panel arranca en 2024: los más viejos quedan
+  afuera. Es normal ver varias decenas.
+- **El período equivocado.** Si un video trae menos de la mitad de las
+  impresiones guardadas, no se pisa: avisa y lo deja como estaba. Esa es la red
+  que te salva de bajar "últimos 28 días" por error.
+
+---
+
+## Plan B: la extensión de Claude en Chrome
+
+Sirve si el botón de descargar no está. Es menos confiable —depende de que la
+extensión lea bien trescientas filas con scroll—, así que usalo solo si hace
+falta. Mismo período: **rango completo**.
 
 > Estoy en la pestaña Contenido de YouTube Studio, viendo la tabla de videos.
 >
@@ -57,16 +124,10 @@ Arriba a la derecha, el período tiene que ser **el rango completo**:
 > - Las impresiones van sin separador de miles.
 > - No inventes filas ni completes datos que no veas. Si una fila no tiene
 >   impresiones o CTR, salteala.
-> - Si la tabla tiene más filas de las que podés leer, decime cuántas leíste.
+> - **Decime cuántas filas leíste en total**, para poder comparar con las que
+>   muestra Studio.
 
----
-
-## 3. Para el CTR del canal por día (opcional)
-
-En la misma pantalla, pestaña **Fecha** en vez de Contenido. Acá sí conviene un
-período corto —la última semana o el último mes—, porque cada fila es un día y
-un día no acumula: su cifra ya no cambia. Mismo prompt, cambiando la primera
-columna:
+Para la tabla por fecha, lo mismo cambiando la primera columna:
 
 > Igual que antes, pero es la tabla por fecha. La primera columna dice `dia`
 > literal, y la clave es la fecha en formato `YYYY-MM-DD`:
@@ -76,53 +137,7 @@ columna:
 > dia,2026-09-20,242829,6.92
 > ```
 
----
-
-## 4. Guardá lo que te devolvió
-
-Copiá el CSV a un archivo, por ejemplo `~/Downloads/ctr.csv`.
-
----
-
-## 5. Cargalo
-
-```bash
-cd ~/Documents/joy-of-gaming-Dashboard
-git pull
-python3 scripts/ctr_actualizar.py ~/Downloads/ctr.csv
-```
-
-Te va a decir cuántos entraron, cuántos se actualizaron y cuáles no pudo
-identificar. Después:
-
-```bash
-git add data/historico
-git commit -m "CTR semanal"
-git push
-```
-
-Y en GitHub, pestaña **Actions** → **Actualizar el panel** → **Run workflow**.
-
----
-
-## Lo que el script tolera solo
-
-No hace falta que el CSV venga perfecto:
-
-- **Título o ID.** Acepta el título tal cual aparece y lo resuelve contra el
-  catálogo. Si preferís el ID de 11 caracteres, también sirve.
-- **Miles con punto o con coma.** `1.234.567` y `1,234,567` se leen igual.
-- **Decimal con coma.** `5,80` se entiende, aunque el prompt pida punto.
-- **Filas repetidas o ya cargadas.** Se pisan sin duplicar nada.
-- **Basura.** Fechas con formato raro, CTR imposibles y títulos que no existen
-  en el catálogo se descartan, y el script dice cuáles.
-- **Videos anteriores a 2024.** El panel arranca en 2024, así que los más viejos
-  no están en el catálogo y quedan afuera. Es normal ver varias decenas.
-- **El período equivocado.** Si un video trae menos de la mitad de las
-  impresiones guardadas, no se pisa: el script avisa y lo deja como estaba.
-
-Es incremental: lo que mandes se suma a lo que ya había. Podés cargar diez
-videos una semana y el catálogo entero la siguiente.
+Guardá lo que devuelva en `~/Downloads/ctr.csv` y seguí desde el paso 2.
 
 ---
 
@@ -135,4 +150,4 @@ tres formas distintas (por día, sin dimensión y por video): responde siempre
 2026, pero no funcionan.
 
 Si algún día empiezan a funcionar, el descargador ya las pide: las va a tomar
-solas y este proceso deja de hacer falta.
+solas y esta rutina deja de hacer falta.
