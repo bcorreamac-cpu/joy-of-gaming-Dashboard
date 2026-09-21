@@ -134,11 +134,16 @@ def main():
             print(f'  FALTA · {p}')
         print('\n  No cargues todavía: falta material.')
         return 1
-    print('  Sirve. Cargalo con:')
+    # Decir que sirve y dejar un comando escrito se lee como si ya estuviera
+    # hecho: pasó, y el commit salió sin los días nuevos. El veredicto arranca
+    # por lo que NO pasó.
+    print('  Los archivos alcanzan. PERO ESTO NO ESCRIBIÓ NADA:')
+    print('  el histórico sigue como estaba. Falta el paso que carga.\n')
     # Solo los que aportaron: nombrar los demás invita a arrastrar un archivo
     # de más la próxima vez, que es como entró todo 2023 al histórico.
     print('    python3 scripts/ctr_actualizar.py ' +
           ' '.join(f'"{r}"' for r in sirven))
+    print('\n  Recién después de correr eso: git add / commit / push.')
     return 0
 
 

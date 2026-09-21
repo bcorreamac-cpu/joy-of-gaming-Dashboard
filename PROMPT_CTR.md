@@ -75,32 +75,50 @@ Si el botón de descargar no aparece, andá al **Plan B** del final.
 Apretar botones la extensión lo hace bien; lo que no conviene es pedirle que lea
 la tabla (ver Plan B). Abrí Studio en Estadísticas y pegale esto:
 
-> Estás en YouTube Studio, sección Estadísticas del canal Joy of Gaming.
+> Estás en YouTube Studio, canal **Joy of Gaming**, en Estadísticas → **MODO
+> AVANZADO**. Si no estás en Modo avanzado, entrá: la vista simple no exporta
+> impresiones y el archivo no sirve.
 >
-> Necesito que bajes dos informes. Hacé esto en orden:
+> Necesito dos descargas. Hacelas en orden y contame qué ves en cada paso.
 >
-> 1. Arriba a la derecha, abrí el selector de período y elegí **Personalizado**.
->    Poné desde el **1 de enero de 2024** hasta **hoy**. Aplicá.
-> 2. Andá a la pestaña **Contenido** y, dentro, a la sub-pestaña **Videos**
->    (no Shorts, no En vivo).
-> 3. Apretá el botón de **descargar** (la flecha hacia abajo, arriba a la
->    derecha) y elegí **Valores separados por comas (.csv)**. Esperá a que baje.
-> 4. Andá a la pestaña **Fecha**, sin tocar el período.
-> 5. Descargá igual que antes: flecha hacia abajo → .csv.
+> **Paso 1 · Las columnas.** En el selector de **Métricas** (el **+** al final
+> de la fila de encabezados de la tabla), asegurate de que estén activadas:
 >
-> Cuando termines, decime:
+> - **Impresiones de miniaturas** (puede aparecer como "Impresiones" o
+>   "Impresiones de la miniatura")
+> - **Tasa de clics de las miniaturas (%)** (o "Porcentaje de clics de las
+>   impresiones" / "de las miniaturas")
+>
+> Se desactivan solas al cambiar de desglose, así que revisalo aunque la semana
+> pasada estuvieran. Las demás columnas podés dejarlas, no molestan.
+>
+> **Decime la lista de columnas que quedó, y si esas dos no están, pará acá y
+> avisame.** Sin ellas el resto del trabajo se tira.
+>
+> **Paso 2 · La tabla de días.** Pestaña **Fecha**, período **últimos 15 días**.
+> Botón de **descargar** → **Valores separados por comas (.csv)**.
+>
+> **Paso 3 · La tabla de videos.** Pestaña **Contenido**, período
+> **personalizado: del 1 de enero de 2024 a hoy**. Antes de descargar, **ordená
+> la tabla por "Tiempo de publicación del video", los más nuevos primero**
+> —haciendo clic en el encabezado de esa columna—. Después: descargar → .csv.
+>
+> El orden importa: Studio corta el export en 500 filas, y sin ordenar se llena
+> de videos viejos y se saltea los nuevos.
+>
+> **Al terminar decime:**
 >
 > - el nombre de los dos archivos que bajaron
-> - el período que quedó seleccionado, tal como lo muestra la pantalla
-> - de la pestaña Contenido, la fila **Total**: cuántas impresiones y qué CTR
->   muestra
-> - cuántos videos lista la tabla
+> - las columnas de cada tabla
+> - cuántas filas tiene cada una (la de Fecha, unas 15; la de Contenido, 500)
+> - por qué columna quedó ordenada la de Contenido
 >
-> **No leas la tabla fila por fila.** Los archivos ya traen todo; solo necesito
-> que confirmes los totales.
+> **No leas las tablas fila por fila.** Los archivos ya traen todo; solo
+> necesito los encabezados y los conteos.
 
-Los totales que devuelve no son un adorno: se cruzan contra lo que cargue el
-script en el paso 2. Si no cuadran, el período salió mal y hay que rehacerlo.
+Lo que devuelve no es un adorno: los conteos y las columnas se cruzan contra lo
+que informa `ctr_revisar.py` en el paso 2. Si no coinciden, bajó otra cosa.
+
 
 ---
 
