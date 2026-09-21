@@ -35,6 +35,38 @@ En cada una, el botón **Descargar** (la flecha hacia abajo, arriba a la derecha
 
 Si el botón de descargar no aparece, andá al **Plan B** del final.
 
+### Si preferís que lo haga la extensión de Claude
+
+Apretar botones la extensión lo hace bien; lo que no conviene es pedirle que lea
+la tabla (ver Plan B). Abrí Studio en Estadísticas y pegale esto:
+
+> Estás en YouTube Studio, sección Estadísticas del canal Joy of Gaming.
+>
+> Necesito que bajes dos informes. Hacé esto en orden:
+>
+> 1. Arriba a la derecha, abrí el selector de período y elegí **Personalizado**.
+>    Poné desde el **1 de enero de 2024** hasta **hoy**. Aplicá.
+> 2. Andá a la pestaña **Contenido** y, dentro, a la sub-pestaña **Videos**
+>    (no Shorts, no En vivo).
+> 3. Apretá el botón de **descargar** (la flecha hacia abajo, arriba a la
+>    derecha) y elegí **Valores separados por comas (.csv)**. Esperá a que baje.
+> 4. Andá a la pestaña **Fecha**, sin tocar el período.
+> 5. Descargá igual que antes: flecha hacia abajo → .csv.
+>
+> Cuando termines, decime:
+>
+> - el nombre de los dos archivos que bajaron
+> - el período que quedó seleccionado, tal como lo muestra la pantalla
+> - de la pestaña Contenido, la fila **Total**: cuántas impresiones y qué CTR
+>   muestra
+> - cuántos videos lista la tabla
+>
+> **No leas la tabla fila por fila.** Los archivos ya traen todo; solo necesito
+> que confirmes los totales.
+
+Los totales que devuelve no son un adorno: se cruzan contra lo que cargue el
+script en el paso 2. Si no cuadran, el período salió mal y hay que rehacerlo.
+
 ---
 
 ## 2. Cargarlos
@@ -94,9 +126,9 @@ forma más rápida de que el panel deje de cuadrar.
 
 ## Plan B: la extensión de Claude en Chrome
 
-Sirve si el botón de descargar no está. Es menos confiable —depende de que la
-extensión lea bien trescientas filas con scroll—, así que usalo solo si hace
-falta. Mismo período: **rango completo**.
+Sirve solo si el botón de descargar no está. Acá la extensión no aprieta
+botones sino que **lee la tabla**, y eso es otra cosa: depende de que cargue
+bien trescientas filas con scroll. Usalo como último recurso. Mismo período: **rango completo**.
 
 > Estoy en la pestaña Contenido de YouTube Studio, viendo la tabla de videos.
 >
